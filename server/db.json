@@ -2,7 +2,12 @@
   "settings": {
     "title": "Kolder",
     "icon": "",
-    "backgroundColor": "#FFFFFF"
+    "theme": {
+      "backgroundColor": "#1A202C",
+      "contentBackgroundColor": "#2D3748",
+      "textColor": "#EDF2F7",
+      "accentColor": "#805AD5"
+    }
   },
   "categories": [],
   "snippets": []

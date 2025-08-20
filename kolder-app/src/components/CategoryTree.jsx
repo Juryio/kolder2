@@ -11,7 +11,7 @@ import {
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon, EditIcon, ChevronDownIcon, ChevronRightIcon } from '@chakra-ui/icons';
 
-const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory }) => {
+const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory, settings }) => {
   const { isOpen, onToggle } = useDisclosure();
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(category.name);
@@ -53,8 +53,7 @@ const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, sel
             cursor="pointer"
             onDoubleClick={() => setIsEditing(true)}
             onClick={() => onSelectCategory(category.id)}
-            bg={isSelected ? 'gray.200' : 'transparent'}
-            _dark={{ bg: isSelected ? 'gray.700' : 'transparent' }}
+            bg={isSelected ? settings?.theme.accentColor : 'transparent'}
             p="1"
             borderRadius="md"
           >
@@ -84,6 +83,7 @@ const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, sel
             onDelete={onDelete}
             onSelectCategory={onSelectCategory}
             selectedCategory={selectedCategory}
+            settings={settings}
           />
         ))}
       </Collapse>
@@ -91,12 +91,12 @@ const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, sel
   );
 };
 
-const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory }) => {
+const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory, settings }) => {
   return (
     <Box>
       <Flex align="center" mb="4">
         <Heading size="md">Categories</Heading>
-        <Button size="sm" ml="auto" onClick={() => onAdd(null)}>
+        <Button size="sm" ml="auto" onClick={() => onAdd(null)} bg={settings?.theme.accentColor}>
           Add Category
         </Button>
       </Flex>
@@ -109,6 +109,7 @@ const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, s
           onDelete={onDelete}
           onSelectCategory={onSelectCategory}
           selectedCategory={selectedCategory}
+          settings={settings}
         />
       ))}
     </Box>
