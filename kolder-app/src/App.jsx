@@ -74,7 +74,7 @@ function App() {
   useEffect(() => {
     if (settings) {
       document.title = settings.title;
-      const favicon = document.getElementById('favicon');
+      const favicon = document.querySelector("link[rel*='icon']");
       if (favicon) {
         favicon.href = settings.icon;
       }
