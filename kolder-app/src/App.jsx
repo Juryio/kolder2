@@ -93,8 +93,7 @@ function App() {
   const handleAddCategory = async (name) => {
     try {
       await api.post('/categories', { name, parentId: addCategoryParentId });
-      const catResponse = await api.get('/categories');
-      setCategories(catResponse.data);
+      await fetchAllData();
     } catch (error) {
       console.error('Error adding category:', error);
     }
@@ -103,9 +102,7 @@ function App() {
   const handleEditCategory = async (id, newName) => {
     try {
       await api.put(`/categories/${id}`, { name: newName });
-      // Refetch for simplicity as nested state update is complex
-      const catResponse = await api.get('/categories');
-      setCategories(catResponse.data);
+      await fetchAllData();
     } catch (error) {
       console.error('Error editing category:', error);
     }
@@ -114,7 +111,6 @@ function App() {
   const handleDeleteCategory = async (id) => {
     try {
       await api.delete(`/categories/${id}`);
-      // Refetch all data as snippets might have been deleted too
       await fetchAllData();
     } catch (error) {
       console.error('Error deleting category:', error);
@@ -123,14 +119,13 @@ function App() {
 
   const handleSelectCategory = (id) => {
     setSelectedCategory(id);
-    // When a category is selected, clear the search
     setSearchTerm('');
   }
 
   const handleAddSnippet = async (snippet) => {
     try {
-      const response = await api.post('/snippets', { ...snippet, categoryId: selectedCategory });
-      setSnippets([...snippets, response.data]);
+      await api.post('/snippets', { ...snippet, categoryId: selectedCategory });
+      await fetchAllData();
     } catch (error) {
       console.error('Error adding snippet:', error);
     }
@@ -138,12 +133,8 @@ function App() {
 
   const handleEditSnippet = async (updatedSnippet) => {
     try {
-      const response = await api.put(`/snippets/${updatedSnippet._id}`, updatedSnippet);
-      setSnippets(
-        snippets.map((snippet) =>
-          snippet._id === updatedSnippet._id ? response.data : snippet
-        )
-      );
+      await api.put(`/snippets/${updatedSnippet._id}`, updatedSnippet);
+      await fetchAllData();
     } catch (error) {
       console.error('Error editing snippet:', error);
     }
@@ -152,7 +143,7 @@ function App() {
   const handleDeleteSnippet = async (id) => {
     try {
       await api.delete(`/snippets/${id}`);
-      setSnippets(snippets.filter((snippet) => snippet._id !== id));
+      await fetchAllData();
     } catch (error) {
       console.error('Error deleting snippet:', error);
     }
