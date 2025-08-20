@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const PORT = 3001;
@@ -9,6 +10,9 @@ const DB_FILE = './db.json';
 
 app.use(cors());
 app.use(bodyParser.json());
+
+// Serve static files from the React frontend app
+app.use(express.static(path.join(__dirname, '../kolder-app/dist')))
 
 const readDb = () => {
   const data = fs.readFileSync(DB_FILE);
@@ -218,6 +222,11 @@ app.post('/api/analytics/reset', (req, res) => {
     });
     writeDb(db);
     res.status(200).json(db.snippets);
+});
+
+// The "catchall" handler: for any request that doesn't match one above, send back React's index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../kolder-app/dist/index.html'));
 });
 
 

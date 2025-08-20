@@ -1,0 +1,14 @@
+# Git
+.git
+.gitignore
+
+# Dependencies
+node_modules
+server/node_modules
+kolder-app/node_modules
+
+# Build artifacts
+kolder-app/dist
+
+# Env
+.env
