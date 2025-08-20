@@ -12,14 +12,19 @@ import {
   Input,
   Button,
   VStack,
+  Heading,
 } from '@chakra-ui/react';
 
 const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
-  const [currentSettings, setCurrentSettings] = useState({ title: '', icon: '', backgroundColor: '' });
+  const [currentSettings, setCurrentSettings] = useState({ title: '', icon: '', theme: { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' } });
 
   useEffect(() => {
     if (settings) {
-      setCurrentSettings(settings);
+      // Ensure theme object exists to avoid errors
+      setCurrentSettings({
+        ...settings,
+        theme: settings.theme || { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' }
+      });
     }
   }, [settings, isOpen]);
 
@@ -27,6 +32,17 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
     const { name, value } = e.target;
     setCurrentSettings(prev => ({ ...prev, [name]: value }));
   };
+
+  const handleThemeChange = (e) => {
+    const { name, value } = e.target;
+    setCurrentSettings(prev => ({
+        ...prev,
+        theme: {
+            ...prev.theme,
+            [name]: value,
+        }
+    }));
+  }
 
   const handleSave = () => {
     onSave(currentSettings);
@@ -36,7 +52,7 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent bg={currentSettings.theme?.contentBackgroundColor} color={currentSettings.theme?.textColor}>
         <ModalHeader>Application Settings</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
@@ -58,19 +74,27 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
                 placeholder="Enter URL for favicon"
               />
             </FormControl>
+            <Heading size="sm" mt={4} alignSelf="flex-start">Theme Colors</Heading>
+             <FormControl>
+              <FormLabel>Main Background</FormLabel>
+              <Input name="backgroundColor" value={currentSettings.theme.backgroundColor} onChange={handleThemeChange} />
+            </FormControl>
             <FormControl>
-              <FormLabel>Background Color</FormLabel>
-              <Input
-                name="backgroundColor"
-                value={currentSettings.backgroundColor}
-                onChange={handleChange}
-                placeholder="e.g., #FFFFFF"
-              />
+              <FormLabel>Content Background</FormLabel>
+              <Input name="contentBackgroundColor" value={currentSettings.theme.contentBackgroundColor} onChange={handleThemeChange} />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Text Color</FormLabel>
+              <Input name="textColor" value={currentSettings.theme.textColor} onChange={handleThemeChange} />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Accent Color</FormLabel>
+              <Input name="accentColor" value={currentSettings.theme.accentColor} onChange={handleThemeChange} />
             </FormControl>
           </VStack>
         </ModalBody>
         <ModalFooter>
-          <Button colorScheme="blue" mr={3} onClick={handleSave}>
+          <Button bg={currentSettings.theme.accentColor} mr={3} onClick={handleSave}>
             Save
           </Button>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>

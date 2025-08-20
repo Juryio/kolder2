@@ -3,13 +3,13 @@ import axios from 'axios';
 import {
   Box,
   Flex,
-  useColorMode,
   Button,
   Heading,
   Spacer,
   useDisclosure,
   Spinner,
   IconButton,
+  Image,
 } from '@chakra-ui/react';
 import { SunIcon, MoonIcon, SettingsIcon, ViewIcon } from '@chakra-ui/icons';
 import CategoryTree from './components/CategoryTree';
@@ -24,7 +24,6 @@ const api = axios.create({
 });
 
 function App() {
-  const { colorMode, toggleColorMode } = useColorMode();
   const [categories, setCategories] = useState([]);
   const [snippets, setSnippets] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -191,8 +190,9 @@ function App() {
   }
 
   return (
-    <Flex direction="column" minH="100vh" bg={settings?.backgroundColor}>
-      <Flex as="header" p="4" borderBottomWidth="1px" alignItems="center">
+    <Flex direction="column" minH="100vh" w="100%" bg={settings?.theme.backgroundColor} color={settings?.theme.textColor}>
+      <Flex as="header" p="4" borderBottomWidth="1px" alignItems="center" borderColor={settings?.theme.contentBackgroundColor}>
+        {settings?.icon && <Image src={settings.icon} alt="App Icon" boxSize="32px" mr={3} />}
         <Heading size="md">{settings?.title || 'Kolder'}</Heading>
         <Spacer />
         <IconButton
@@ -207,16 +207,14 @@ function App() {
             aria-label="Settings"
             mr={2}
         />
-        <Button onClick={toggleColorMode}>
-          {colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
-        </Button>
       </Flex>
       {currentView === 'analytics' ? (
-        <AnalyticsPage onBack={() => setCurrentView('main')} snippets={snippets} setSnippets={setSnippets}/>
+        <AnalyticsPage onBack={() => setCurrentView('main')} snippets={snippets} setSnippets={setSnippets} settings={settings}/>
       ) : (
         <Flex flex="1">
-            <Box as="aside" w="250px" p="4" borderRightWidth="1px" bg={colorMode === 'light' ? 'whiteAlpha.800' : 'gray.800'}>
+            <Box as="aside" w="250px" p="4" borderRightWidth="1px" bg={settings?.theme.contentBackgroundColor} borderColor={settings?.theme.contentBackgroundColor}>
             <CategoryTree
+                settings={settings}
                 categories={categories}
                 onAdd={handleOpenAddCategoryModal}
                 onEdit={handleEditCategory}
