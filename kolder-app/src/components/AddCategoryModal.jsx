@@ -13,7 +13,7 @@ import {
   Button,
 } from '@chakra-ui/react';
 
-const AddCategoryModal = ({ isOpen, onClose, onAdd }) => {
+const AddCategoryModal = ({ isOpen, onClose, onAdd, settings }) => {
   const [name, setName] = useState('');
 
   const handleAdd = () => {
@@ -26,7 +26,7 @@ const AddCategoryModal = ({ isOpen, onClose, onAdd }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent bg={settings?.theme.contentBackgroundColor} color={settings?.theme.textColor}>
         <ModalHeader>Add New Category</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
@@ -40,7 +40,14 @@ const AddCategoryModal = ({ isOpen, onClose, onAdd }) => {
           </FormControl>
         </ModalBody>
         <ModalFooter>
-          <Button colorScheme="blue" mr={3} onClick={handleAdd}>
+          <Button
+            bgGradient={`linear(to-r, ${settings?.theme.accentColor}, purple.500)`}
+            _hover={{
+                bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`
+            }}
+            mr={3}
+            onClick={handleAdd}
+          >
             Save
           </Button>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>

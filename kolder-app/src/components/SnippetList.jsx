@@ -15,7 +15,7 @@ import SnippetEditor from './SnippetEditor';
 const getCategoryPath = (id, categories, path = []) => {
     for (const category of categories) {
         const newPath = [...path, category.name];
-        if (category.id === id) {
+        if (category._id === id) {
             return newPath.join(' / ');
         }
         if (category.children && category.children.length > 0) {
@@ -26,7 +26,7 @@ const getCategoryPath = (id, categories, path = []) => {
     return null;
 };
 
-const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, onEdit, onDelete, onSelectSnippet }) => {
+const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, onEdit, onDelete, onSelectSnippet, settings }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [editingSnippet, setEditingSnippet] = useState(null);
 
@@ -41,7 +41,7 @@ const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, 
   };
 
   const handleSave = (snippet) => {
-    if (snippet.id) {
+    if (snippet._id) {
       onEdit(snippet);
     } else {
       onAdd(snippet);
@@ -54,7 +54,17 @@ const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, 
     <Box>
       <Flex align="center" mb="4">
         <Heading size="md">{isSearching ? `Search Results for "${searchTerm}"` : 'Snippets'}</Heading>
-        <Button size="sm" ml="auto" leftIcon={<AddIcon />} onClick={handleNew} disabled={isSearching}>
+        <Button
+            size="sm"
+            ml="auto"
+            leftIcon={<AddIcon />}
+            onClick={handleNew}
+            disabled={isSearching}
+            bgGradient={`linear(to-r, ${settings?.theme.accentColor}, purple.500)`}
+            _hover={{
+                bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`
+            }}
+        >
           New Snippet
         </Button>
       </Flex>
@@ -73,7 +83,7 @@ const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, 
         </Text>
       ) : (
         snippets.map((snippet) => (
-          <Flex key={snippet.id} align="center" justify="space-between" p={3} borderWidth="1px" borderRadius="md" mt={2}>
+          <Flex key={snippet._id} align="center" justify="space-between" p={3} bg={settings?.theme.contentBackgroundColor} borderWidth="1px" borderColor={settings?.theme.accentColor} borderRadius="md" mt={2}>
             <Box>
                 <Text fontWeight="bold" cursor="pointer" onClick={() => onSelectSnippet(snippet)}>{snippet.name}</Text>
                 {isSearching && (
@@ -84,7 +94,7 @@ const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, 
             </Box>
             <Box>
               <IconButton size="sm" icon={<EditIcon />} mr="2" onClick={() => handleEdit(snippet)} />
-              <IconButton size="sm" icon={<DeleteIcon />} onClick={() => onDelete(snippet.id)} />
+              <IconButton size="sm" icon={<DeleteIcon />} onClick={() => onDelete(snippet._id)} />
             </Box>
           </Flex>
         ))
@@ -94,6 +104,7 @@ const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, 
         onClose={onClose}
         onSave={handleSave}
         snippet={editingSnippet}
+        settings={settings}
       />
     </Box>
   );

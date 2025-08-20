@@ -1,223 +1,170 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const fs = require('fs');
+const path = require('path');
+const mongoose = require('mongoose');
+const { Category, Snippet, Settings } = require('./models');
 
 const app = express();
-const PORT = 3001;
-const DB_FILE = './db.json';
+const PORT = process.env.PORT || 3001;
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/kolderdb';
 
+// --- Middleware ---
 app.use(cors());
 app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, '../kolder-app/dist')));
 
-const readDb = () => {
-  const data = fs.readFileSync(DB_FILE);
-  return JSON.parse(data);
-};
-
-const writeDb = (data) => {
-  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-};
-
-// --- API Endpoints for Categories ---
-
-// GET all categories
-app.get('/api/categories', (req, res) => {
-  const db = readDb();
-  res.json(db.categories);
-});
-
-// POST a new category
-app.post('/api/categories', (req, res) => {
-    const db = readDb();
-    const newCategory = { ...req.body, id: Date.now() };
-
-    if (req.body.parentId) {
-        const addRec = (nodes) => {
-            return nodes.map(node => {
-                if (node.id === req.body.parentId) {
-                    return { ...node, children: [...node.children, newCategory] };
-                }
-                if (node.children && node.children.length > 0) {
-                    return { ...node, children: addRec(node.children) };
-                }
-                return node;
-            });
-        };
-        db.categories = addRec(db.categories);
-    } else {
-        db.categories.push(newCategory);
-    }
-
-    writeDb(db);
-    res.status(201).json(newCategory);
-  });
-
-// PUT (update) a category
-app.put('/api/categories/:id', (req, res) => {
-    const db = readDb();
-    const categoryId = parseInt(req.params.id);
-    const updatedData = req.body;
-
-    const editRec = (nodes) => {
-        return nodes.map(node => {
-            if (node.id === categoryId) {
-                return { ...node, name: updatedData.name };
+// --- Database Connection ---
+mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => {
+        console.log('MongoDB connected successfully');
+        // Seed initial settings data if none exists
+        Settings.findOne().then(settings => {
+            if (!settings) {
+                new Settings().save().then(() => console.log('Default settings created.'));
             }
-            if (node.children && node.children.length > 0) {
-                return { ...node, children: editRec(node.children) };
-            }
-            return node;
         });
-    };
-    db.categories = editRec(db.categories);
+    })
+    .catch(err => console.error('MongoDB connection error:', err));
 
-    writeDb(db);
-    res.json(updatedData);
-});
 
-// DELETE a category
-app.delete('/api/categories/:id', (req, res) => {
-    const db = readDb();
-    const categoryId = parseInt(req.params.id);
+// --- API Endpoints ---
 
-    const getIdsToDelete = (nodes, parentId) => {
-        let ids = [parentId];
-        const node = nodes.find(n => n.id === parentId);
-        if (node) {
-            node.children.forEach(child => {
-                ids = [...ids, ...getIdsToDelete(node.children, child.id)];
+// Helper to build category tree for the frontend from a flat list
+const buildTree = (categories, parentId = null) => {
+    const tree = [];
+    categories
+        .filter(cat => String(cat.parentId) === String(parentId))
+        .forEach(cat => {
+            const children = buildTree(categories, cat._id);
+            // Mongoose documents are not easily extensible, so we convert to a plain object
+            const catObj = cat.toObject();
+            tree.push({
+                ...catObj,
+                children: children
             });
-        }
-        return ids;
-    }
-    const findNode = (nodes, id) => {
-        for (const node of nodes) {
-            if (node.id === id) return node;
-            if (node.children) {
-                const found = findNode(node.children, id);
-                if (found) return found;
+        });
+    return tree;
+};
+
+// Categories
+app.get('/api/categories', async (req, res) => {
+    try {
+        const flatCategories = await Category.find();
+        const tree = buildTree(flatCategories);
+        res.json(tree);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/categories', async (req, res) => {
+    try {
+        const { name, parentId } = req.body;
+        const newCategory = new Category({ name, parentId: parentId || null });
+        await newCategory.save();
+        res.status(201).json(newCategory);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/categories/:id', async (req, res) => {
+    try {
+        const { name } = req.body;
+        const updatedCategory = await Category.findByIdAndUpdate(req.params.id, { name }, { new: true });
+        res.json(updatedCategory);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/categories/:id', async (req, res) => {
+    try {
+        const category = await Category.findById(req.params.id);
+        if (!category) return res.status(404).send('Category not found');
+
+        // This custom remove function will also trigger the pre-remove hook for children
+        const removeWithChildren = async (catId) => {
+            const children = await Category.find({ parentId: catId });
+            for (const child of children) {
+                await removeWithChildren(child._id);
             }
+            await Snippet.deleteMany({ categoryId: catId });
+            await Category.findByIdAndDelete(catId);
+        };
+
+        await removeWithChildren(req.params.id);
+        res.status(204).send();
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+
+// Snippets
+app.get('/api/snippets', async (req, res) => {
+    try {
+        const snippets = await Snippet.find();
+        res.json(snippets);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/snippets', async (req, res) => {
+    try {
+        const newSnippet = new Snippet(req.body);
+        await newSnippet.save();
+        res.status(201).json(newSnippet);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/snippets/:id', async (req, res) => {
+    try {
+        const updatedSnippet = await Snippet.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json(updatedSnippet);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/snippets/:id', async (req, res) => {
+    try {
+        await Snippet.findByIdAndDelete(req.params.id);
+        res.status(204).send();
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+
+// Settings
+app.get('/api/settings', async (req, res) => {
+    try {
+        let settings = await Settings.findOne();
+        if (!settings) {
+            settings = await new Settings().save();
         }
-    }
+        res.json(settings);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
 
-    let allIdsToDelete = [];
-    const topLevelNode = db.categories.find(c => c.id === categoryId);
-    if(topLevelNode) {
-        allIdsToDelete = getIdsToDelete(db.categories, categoryId)
-    } else {
-        // search in children
-        const findParent = (nodes, id) => {
-            for(const node of nodes) {
-                if(node.children.some(c => c.id === id)) return node;
-                if(node.children) {
-                    const found = findParent(node.children, id);
-                    if(found) return found;
-                }
-            }
-        }
-        const parent = findParent(db.categories, categoryId);
-        if(parent) {
-            allIdsToDelete = getIdsToDelete(parent.children, categoryId);
-        }
-    }
-
-
-    const deleteRec = (nodes) => {
-        return nodes.filter(node => !allIdsToDelete.includes(node.id))
-            .map(node => {
-                if (node.children && node.children.length > 0) {
-                    return { ...node, children: deleteRec(node.children) };
-                }
-                return node;
-            });
-    };
-
-    db.categories = deleteRec(db.categories);
-    db.snippets = db.snippets.filter(s => !allIdsToDelete.includes(s.categoryId));
-
-    writeDb(db);
-    res.status(204).send();
+app.put('/api/settings', async (req, res) => {
+    try {
+        // Use findOneAndUpdate with upsert to create the document if it doesn't exist.
+        const updatedSettings = await Settings.findOneAndUpdate({}, req.body, { new: true, upsert: true });
+        res.json(updatedSettings);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 
-// --- API Endpoints for Snippets ---
-
-// GET all snippets
-app.get('/api/snippets', (req, res) => {
-  const db = readDb();
-  res.json(db.snippets);
-});
-
-// POST a new snippet
-app.post('/api/snippets', (req, res) => {
-  const db = readDb();
-  const newSnippet = { ...req.body, id: Date.now(), useCount: 0 };
-  db.snippets.push(newSnippet);
-  writeDb(db);
-  res.status(201).json(newSnippet);
-});
-
-// PUT (update) a snippet
-app.put('/api/snippets/:id', (req, res) => {
-  const db = readDb();
-  const snippetId = parseInt(req.params.id);
-  const updatedSnippet = req.body;
-  db.snippets = db.snippets.map(s => (s.id === snippetId ? { ...s, ...updatedSnippet } : s));
-  writeDb(db);
-  res.json(updatedSnippet);
-});
-
-// DELETE a snippet
-app.delete('/api/snippets/:id', (req, res) => {
-  const db = readDb();
-  const snippetId = parseInt(req.params.id);
-  db.snippets = db.snippets.filter(s => s.id !== snippetId);
-  writeDb(db);
-  res.status(204).send();
-});
-
-
-// --- API Endpoints for Settings ---
-
-// GET settings
-app.get('/api/settings', (req, res) => {
-  const db = readDb();
-  res.json(db.settings);
-});
-
-// PUT (update) settings
-app.put('/api/settings', (req, res) => {
-  const db = readDb();
-  db.settings = { ...db.settings, ...req.body };
-  writeDb(db);
-  res.json(db.settings);
-});
-
-// --- API Endpoints for Analytics ---
-
-// POST to track snippet usage
-app.post('/api/snippets/:id/track', (req, res) => {
-    const db = readDb();
-    const snippetId = parseInt(req.params.id);
-    const snippet = db.snippets.find(s => s.id === snippetId);
-    if (snippet) {
-        snippet.useCount += 1;
-        writeDb(db);
+// Analytics
+app.post('/api/snippets/:id/track', async (req, res) => {
+    try {
+        const snippet = await Snippet.findByIdAndUpdate(req.params.id, { $inc: { useCount: 1 } }, { new: true });
         res.json(snippet);
-    } else {
-        res.status(404).send('Snippet not found');
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST to reset all analytics
-app.post('/api/analytics/reset', (req, res) => {
-    const db = readDb();
-    db.snippets.forEach(snippet => {
-        snippet.useCount = 0;
-    });
-    writeDb(db);
-    res.status(200).json(db.snippets);
+app.post('/api/analytics/reset', async (req, res) => {
+    try {
+        await Snippet.updateMany({}, { useCount: 0 });
+        const updatedSnippets = await Snippet.find();
+        res.status(200).json(updatedSnippets);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+
+// --- Catch-all for Frontend Routing ---
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../kolder-app/dist/index.html'));
 });
 
 

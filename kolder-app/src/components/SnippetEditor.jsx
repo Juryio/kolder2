@@ -14,12 +14,12 @@ import {
 } from '@chakra-ui/react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import './quill.css'; // Import custom Quill styles
 
-const SnippetEditor = ({ isOpen, onClose, onSave, snippet }) => {
+const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
   const [name, setName] = useState('');
   const [content, setContent] = useState('');
 
-  // When the modal opens, if we are editing a snippet, populate the fields
   useEffect(() => {
     if (isOpen) {
         if (snippet) {
@@ -40,7 +40,7 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="xl">
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent bg={settings?.theme.contentBackgroundColor} color={settings?.theme.textColor}>
         <ModalHeader>{snippet ? 'Edit Snippet' : 'New Snippet'}</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
@@ -54,7 +54,14 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet }) => {
           </FormControl>
         </ModalBody>
         <ModalFooter>
-          <Button colorScheme="blue" mr={3} onClick={handleSave}>
+          <Button
+            bgGradient={`linear(to-r, ${settings?.theme.accentColor}, purple.500)`}
+            _hover={{
+                bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`
+            }}
+            mr={3}
+            onClick={handleSave}
+          >
             Save
           </Button>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>

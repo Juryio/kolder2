@@ -18,17 +18,18 @@ const api = axios.create({
     baseURL: 'http://localhost:3001/api',
 });
 
-const SnippetViewer = ({ snippet, onBack }) => {
+const SnippetViewer = ({ snippet, onBack, settings }) => {
   const [placeholders, setPlaceholders] = useState({});
   const [output, setOutput] = useState('');
   const { hasCopied, onCopy } = useClipboard(output);
 
   const handleCopy = () => {
     onCopy();
-    api.post(`/snippets/${snippet.id}/track`).catch(err => console.error("Failed to track copy", err));
+    api.post(`/snippets/${snippet._id}/track`).catch(err => console.error("Failed to track copy", err));
   }
 
   useEffect(() => {
+    if (!snippet.content) return;
     const placeholderRegex = /{{(.*?)}}/g;
     const foundPlaceholders = [...snippet.content.matchAll(placeholderRegex)];
     const initialPlaceholders = {};
@@ -39,7 +40,7 @@ const SnippetViewer = ({ snippet, onBack }) => {
   }, [snippet]);
 
   useEffect(() => {
-    let newOutput = snippet.content;
+    let newOutput = snippet.content || '';
     for (const key in placeholders) {
       newOutput = newOutput.replace(new RegExp(`{{${key}}}`, 'g'), placeholders[key]);
     }
@@ -60,7 +61,7 @@ const SnippetViewer = ({ snippet, onBack }) => {
       </Flex>
 
       <VStack spacing="4" align="stretch">
-        <Box>
+        <Box bg={settings?.theme.contentBackgroundColor} p={4} borderRadius="md">
           <Heading size="sm" mb="2">Fill Placeholders</Heading>
           {Object.keys(placeholders).length > 0 ? (
             Object.keys(placeholders).map(key => (
@@ -83,13 +84,20 @@ const SnippetViewer = ({ snippet, onBack }) => {
             p="4"
             borderWidth="1px"
             borderRadius="md"
-            bg="gray.50"
-            _dark={{ bg: 'gray.700' }}
+            bg={settings?.theme.contentBackgroundColor}
+            borderColor={settings?.theme.accentColor}
             dangerouslySetInnerHTML={{ __html: output }}
           />
         </Box>
 
-        <Button onClick={handleCopy} disabled={!output}>
+        <Button
+            onClick={handleCopy}
+            disabled={!output}
+            bgGradient={`linear(to-r, ${settings?.theme.accentColor}, purple.500)`}
+            _hover={{
+                bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`
+            }}
+        >
           {hasCopied ? 'Copied!' : 'Copy to Clipboard'}
         </Button>
       </VStack>

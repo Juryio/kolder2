@@ -22,11 +22,11 @@ const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, sel
         setIsEditing(false);
         return;
     }
-    onEdit(category.id, newName);
+    onEdit(category._id, newName);
     setIsEditing(false);
   };
 
-  const isSelected = selectedCategory === category.id;
+  const isSelected = selectedCategory === category._id;
 
   return (
     <Box pl="4" mt="2">
@@ -52,7 +52,7 @@ const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, sel
             size="sm"
             cursor="pointer"
             onDoubleClick={() => setIsEditing(true)}
-            onClick={() => onSelectCategory(category.id)}
+            onClick={() => onSelectCategory(category._id)}
             bg={isSelected ? settings?.theme.accentColor : 'transparent'}
             p="1"
             borderRadius="md"
@@ -64,19 +64,19 @@ const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, sel
           size="xs"
           ml="2"
           icon={<AddIcon />}
-          onClick={() => onAdd(category.id)}
+          onClick={() => onAdd(category._id)}
         />
         <IconButton
           size="xs"
           ml="2"
           icon={<DeleteIcon />}
-          onClick={() => onDelete(category.id)}
+          onClick={() => onDelete(category._id)}
         />
       </Flex>
       <Collapse in={isOpen}>
         {category.children.map((child) => (
           <CategoryItem
-            key={child.id}
+            key={child._id}
             category={child}
             onAdd={onAdd}
             onEdit={onEdit}
@@ -96,13 +96,21 @@ const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, s
     <Box>
       <Flex align="center" mb="4">
         <Heading size="md">Categories</Heading>
-        <Button size="sm" ml="auto" onClick={() => onAdd(null)} bg={settings?.theme.accentColor}>
+        <Button
+            size="sm"
+            ml="auto"
+            onClick={() => onAdd(null)}
+            bgGradient={`linear(to-r, ${settings?.theme.accentColor}, purple.500)`}
+            _hover={{
+                bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`
+            }}
+        >
           Add Category
         </Button>
       </Flex>
       {categories.map((category) => (
         <CategoryItem
-          key={category.id}
+          key={category._id}
           category={category}
           onAdd={onAdd}
           onEdit={onEdit}

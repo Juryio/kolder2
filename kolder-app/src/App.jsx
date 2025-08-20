@@ -11,7 +11,7 @@ import {
   IconButton,
   Image,
 } from '@chakra-ui/react';
-import { SunIcon, MoonIcon, SettingsIcon, ViewIcon } from '@chakra-ui/icons';
+import { SettingsIcon, ViewIcon } from '@chakra-ui/icons';
 import CategoryTree from './components/CategoryTree';
 import SnippetList from './components/SnippetList';
 import SnippetViewer from './components/SnippetViewer';
@@ -49,8 +49,7 @@ function App() {
     setSelectedSnippet(null);
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchAllData = async () => {
       setLoading(true);
       try {
         const [catResponse, snipResponse, settingsResponse] = await Promise.all([
@@ -66,8 +65,10 @@ function App() {
       } finally {
         setLoading(false);
       }
-    };
-    fetchData();
+  }
+
+  useEffect(() => {
+    fetchAllData();
   }, []);
 
   useEffect(() => {
@@ -90,57 +91,40 @@ function App() {
   };
 
   const handleAddCategory = async (name) => {
-    setLoading(true);
     try {
-      await api.post('/categories', { name, parentId: addCategoryParentId, children: [] });
+      await api.post('/categories', { name, parentId: addCategoryParentId });
       const catResponse = await api.get('/categories');
       setCategories(catResponse.data);
     } catch (error) {
       console.error('Error adding category:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleEditCategory = async (id, newName) => {
     try {
       await api.put(`/categories/${id}`, { name: newName });
-      const editRec = (nodes) => {
-        return nodes.map((node) => {
-          if (node.id === id) {
-            return { ...node, name: newName };
-          }
-          if (node.children && node.children.length > 0) {
-            return { ...node, children: editRec(node.children) };
-          }
-          return node;
-        });
-      };
-      setCategories(editRec(categories));
+      // Refetch for simplicity as nested state update is complex
+      const catResponse = await api.get('/categories');
+      setCategories(catResponse.data);
     } catch (error) {
       console.error('Error editing category:', error);
     }
   };
 
   const handleDeleteCategory = async (id) => {
-    setLoading(true);
     try {
       await api.delete(`/categories/${id}`);
-      const [catResponse, snipResponse] = await Promise.all([
-        api.get('/categories'),
-        api.get('/snippets'),
-      ]);
-      setCategories(catResponse.data);
-      setSnippets(snipResponse.data);
+      // Refetch all data as snippets might have been deleted too
+      await fetchAllData();
     } catch (error) {
       console.error('Error deleting category:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleSelectCategory = (id) => {
     setSelectedCategory(id);
+    // When a category is selected, clear the search
+    setSearchTerm('');
   }
 
   const handleAddSnippet = async (snippet) => {
@@ -154,10 +138,10 @@ function App() {
 
   const handleEditSnippet = async (updatedSnippet) => {
     try {
-      await api.put(`/snippets/${updatedSnippet.id}`, updatedSnippet);
+      const response = await api.put(`/snippets/${updatedSnippet._id}`, updatedSnippet);
       setSnippets(
         snippets.map((snippet) =>
-          snippet.id === updatedSnippet.id ? updatedSnippet : snippet
+          snippet._id === updatedSnippet._id ? response.data : snippet
         )
       );
     } catch (error) {
@@ -168,7 +152,7 @@ function App() {
   const handleDeleteSnippet = async (id) => {
     try {
       await api.delete(`/snippets/${id}`);
-      setSnippets(snippets.filter((snippet) => snippet.id !== id));
+      setSnippets(snippets.filter((snippet) => snippet._id !== id));
     } catch (error) {
       console.error('Error deleting snippet:', error);
     }
@@ -184,7 +168,7 @@ function App() {
   const filteredSnippets = searchTerm
     ? snippets.filter(snippet =>
         snippet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        snippet.content.toLowerCase().includes(searchTerm.toLowerCase())
+        (snippet.content && snippet.content.toLowerCase().includes(searchTerm.toLowerCase()))
       )
     : snippets.filter(snippet => snippet.categoryId === selectedCategory);
 
@@ -207,12 +191,14 @@ function App() {
             icon={<ViewIcon />}
             aria-label="Analytics"
             mr={2}
+            bg={settings?.theme.accentColor}
         />
         <IconButton
             onClick={onSettingsOpen}
             icon={<SettingsIcon />}
             aria-label="Settings"
             mr={2}
+            bg={settings?.theme.accentColor}
         />
       </Flex>
       {currentView === 'analytics' ? (
@@ -232,17 +218,18 @@ function App() {
             </Box>
             <Box as="main" flex="1" p="4">
             {selectedSnippet ? (
-                <SnippetViewer snippet={selectedSnippet} onBack={handleBackToList} />
+                <SnippetViewer snippet={selectedSnippet} onBack={handleBackToList} settings={settings} />
             ) : (
                 <SnippetList
                 snippets={filteredSnippets}
-              categories={categories}
+                categories={categories}
                 searchTerm={searchTerm}
-              onSearchChange={handleSearchChange}
+                onSearchChange={handleSearchChange}
                 onAdd={handleAddSnippet}
                 onEdit={handleEditSnippet}
                 onDelete={handleDeleteSnippet}
                 onSelectSnippet={handleSelectSnippet}
+                settings={settings}
                 />
             )}
             </Box>
@@ -252,6 +239,7 @@ function App() {
         isOpen={isAddCategoryOpen}
         onClose={onAddCategoryClose}
         onAdd={handleAddCategory}
+        settings={settings}
       />
       <SettingsModal
         isOpen={isSettingsOpen}
