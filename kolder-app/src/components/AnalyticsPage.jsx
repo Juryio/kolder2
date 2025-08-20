@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -20,7 +19,7 @@ const api = axios.create({
     baseURL: 'http://localhost:3001/api',
 });
 
-const AnalyticsPage = ({ onBack, snippets, setSnippets }) => {
+const AnalyticsPage = ({ onBack, snippets, setSnippets, settings }) => {
     const toast = useToast();
     const sortedSnippets = [...snippets].sort((a, b) => b.useCount - a.useCount);
 
@@ -58,19 +57,27 @@ const AnalyticsPage = ({ onBack, snippets, setSnippets }) => {
             </Button>
             <Heading size="lg">Snippet Analytics</Heading>
         </Flex>
-        <Button colorScheme="red" onClick={handleReset}>Reset All Analytics</Button>
+        <Button
+            bgGradient="linear(to-r, red.500, red.600)"
+            _hover={{
+                bgGradient: 'linear(to-r, red.600, red.700)',
+            }}
+            onClick={handleReset}
+        >
+            Reset All Analytics
+        </Button>
       </Flex>
 
       <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8} mb={8}>
-        <Stat p={4} borderWidth="1px" borderRadius="md">
+        <Stat p={4} bg={settings?.theme.contentBackgroundColor} borderWidth="1px" borderRadius="md">
           <StatLabel>Total Snippets</StatLabel>
           <StatNumber>{snippets.length}</StatNumber>
         </Stat>
-        <Stat p={4} borderWidth="1px" borderRadius="md">
+        <Stat p={4} bg={settings?.theme.contentBackgroundColor} borderWidth="1px" borderRadius="md">
           <StatLabel>Total Snippet Uses</StatLabel>
           <StatNumber>{totalUses}</StatNumber>
         </Stat>
-        <Stat p={4} borderWidth="1px" borderRadius="md">
+        <Stat p={4} bg={settings?.theme.contentBackgroundColor} borderWidth="1px" borderRadius="md">
           <StatLabel>Most Used Snippet</StatLabel>
           <StatNumber>{sortedSnippets[0]?.name || 'N/A'}</StatNumber>
           <StatHelpText>Used {sortedSnippets[0]?.useCount || 0} times</StatHelpText>
@@ -80,7 +87,7 @@ const AnalyticsPage = ({ onBack, snippets, setSnippets }) => {
       <Heading size="md" mb={4}>Usage Breakdown</Heading>
       <VStack spacing={4} align="stretch">
         {sortedSnippets.map(snippet => (
-          <Flex key={snippet.id} p={4} borderWidth="1px" borderRadius="md" justify="space-between" align="center">
+          <Flex key={snippet._id} p={4} bg={settings?.theme.contentBackgroundColor} borderWidth="1px" borderRadius="md" justify="space-between" align="center">
             <Text fontWeight="bold">{snippet.name}</Text>
             <Text>{snippet.useCount} uses</Text>
           </Flex>
