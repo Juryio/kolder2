@@ -7,11 +7,12 @@ import {
   Text,
   IconButton,
   useDisclosure,
+  Input,
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon, EditIcon } from '@chakra-ui/icons';
 import SnippetEditor from './SnippetEditor';
 
-const SnippetList = ({ snippets, selectedCategory, onAdd, onEdit, onDelete, onSelectSnippet }) => {
+const SnippetList = ({ snippets, selectedCategory, searchTerm, onSearchChange, onAdd, onEdit, onDelete, onSelectSnippet }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [editingSnippet, setEditingSnippet] = useState(null);
 
@@ -50,8 +51,14 @@ const SnippetList = ({ snippets, selectedCategory, onAdd, onEdit, onDelete, onSe
           New Snippet
         </Button>
       </Flex>
+      <Input
+        placeholder="Search snippets..."
+        value={searchTerm}
+        onChange={(e) => onSearchChange(e.target.value)}
+        mb={4}
+      />
       {snippets.length === 0 ? (
-        <Text>No snippets in this category.</Text>
+        <Text>No snippets match your search.</Text>
       ) : (
         snippets.map((snippet) => (
           <Flex key={snippet.id} align="center" justify="space-between" p="2" borderWidth="1px" borderRadius="md" mt="2">

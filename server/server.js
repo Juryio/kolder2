@@ -152,7 +152,7 @@ app.get('/api/snippets', (req, res) => {
 // POST a new snippet
 app.post('/api/snippets', (req, res) => {
   const db = readDb();
-  const newSnippet = { ...req.body, id: Date.now() };
+  const newSnippet = { ...req.body, id: Date.now(), useCount: 0 };
   db.snippets.push(newSnippet);
   writeDb(db);
   res.status(201).json(newSnippet);
@@ -175,6 +175,49 @@ app.delete('/api/snippets/:id', (req, res) => {
   db.snippets = db.snippets.filter(s => s.id !== snippetId);
   writeDb(db);
   res.status(204).send();
+});
+
+
+// --- API Endpoints for Settings ---
+
+// GET settings
+app.get('/api/settings', (req, res) => {
+  const db = readDb();
+  res.json(db.settings);
+});
+
+// PUT (update) settings
+app.put('/api/settings', (req, res) => {
+  const db = readDb();
+  db.settings = { ...db.settings, ...req.body };
+  writeDb(db);
+  res.json(db.settings);
+});
+
+// --- API Endpoints for Analytics ---
+
+// POST to track snippet usage
+app.post('/api/snippets/:id/track', (req, res) => {
+    const db = readDb();
+    const snippetId = parseInt(req.params.id);
+    const snippet = db.snippets.find(s => s.id === snippetId);
+    if (snippet) {
+        snippet.useCount += 1;
+        writeDb(db);
+        res.json(snippet);
+    } else {
+        res.status(404).send('Snippet not found');
+    }
+});
+
+// POST to reset all analytics
+app.post('/api/analytics/reset', (req, res) => {
+    const db = readDb();
+    db.snippets.forEach(snippet => {
+        snippet.useCount = 0;
+    });
+    writeDb(db);
+    res.status(200).json(db.snippets);
 });
 
 

@@ -12,11 +12,21 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { ArrowBackIcon } from '@chakra-ui/icons';
+import axios from 'axios';
+
+const api = axios.create({
+    baseURL: 'http://localhost:3001/api',
+});
 
 const SnippetViewer = ({ snippet, onBack }) => {
   const [placeholders, setPlaceholders] = useState({});
   const [output, setOutput] = useState('');
   const { hasCopied, onCopy } = useClipboard(output);
+
+  const handleCopy = () => {
+    onCopy();
+    api.post(`/snippets/${snippet.id}/track`).catch(err => console.error("Failed to track copy", err));
+  }
 
   useEffect(() => {
     const placeholderRegex = /{{(.*?)}}/g;
@@ -69,12 +79,17 @@ const SnippetViewer = ({ snippet, onBack }) => {
 
         <Box>
           <Heading size="sm" mb="2">Preview</Heading>
-          <Box p="4" borderWidth="1px" borderRadius="md" bg="gray.50" _dark={{ bg: 'gray.700' }}>
-            <Text whiteSpace="pre-wrap">{output}</Text>
-          </Box>
+          <Box
+            p="4"
+            borderWidth="1px"
+            borderRadius="md"
+            bg="gray.50"
+            _dark={{ bg: 'gray.700' }}
+            dangerouslySetInnerHTML={{ __html: output }}
+          />
         </Box>
 
-        <Button onClick={onCopy} disabled={!output}>
+        <Button onClick={handleCopy} disabled={!output}>
           {hasCopied ? 'Copied!' : 'Copy to Clipboard'}
         </Button>
       </VStack>

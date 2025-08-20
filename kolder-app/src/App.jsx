@@ -9,12 +9,15 @@ import {
   Spacer,
   useDisclosure,
   Spinner,
+  IconButton,
 } from '@chakra-ui/react';
-import { SunIcon, MoonIcon } from '@chakra-ui/icons';
+import { SunIcon, MoonIcon, SettingsIcon, ViewIcon } from '@chakra-ui/icons';
 import CategoryTree from './components/CategoryTree';
 import SnippetList from './components/SnippetList';
 import SnippetViewer from './components/SnippetViewer';
 import AddCategoryModal from './components/AddCategoryModal';
+import SettingsModal from './components/SettingsModal';
+import AnalyticsPage from './components/AnalyticsPage';
 
 const api = axios.create({
   baseURL: 'http://localhost:3001/api',
@@ -29,6 +32,10 @@ function App() {
   const { isOpen: isAddCategoryOpen, onOpen: onAddCategoryOpen, onClose: onAddCategoryClose } = useDisclosure();
   const [addCategoryParentId, setAddCategoryParentId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState(null);
+  const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentView, setCurrentView] = useState('main'); // 'main' or 'analytics'
 
   const handleOpenAddCategoryModal = (parentId = null) => {
     setAddCategoryParentId(parentId);
@@ -47,12 +54,14 @@ function App() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [catResponse, snipResponse] = await Promise.all([
+        const [catResponse, snipResponse, settingsResponse] = await Promise.all([
           api.get('/categories'),
           api.get('/snippets'),
+          api.get('/settings'),
         ]);
         setCategories(catResponse.data);
         setSnippets(snipResponse.data);
+        setSettings(settingsResponse.data);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -61,6 +70,25 @@ function App() {
     };
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (settings) {
+      document.title = settings.title;
+      const favicon = document.getElementById('favicon');
+      if (favicon) {
+        favicon.href = settings.icon;
+      }
+    }
+  }, [settings]);
+
+  const handleSaveSettings = async (newSettings) => {
+    try {
+      const response = await api.put('/settings', newSettings);
+      setSettings(response.data);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    }
+  };
 
   const handleAddCategory = async (name) => {
     setLoading(true);
@@ -147,7 +175,12 @@ function App() {
     }
   };
 
-  const filteredSnippets = snippets.filter(snippet => snippet.categoryId === selectedCategory);
+  const filteredSnippets = snippets
+    .filter(snippet => snippet.categoryId === selectedCategory)
+    .filter(snippet =>
+      snippet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      snippet.content.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
   if (loading) {
     return (
@@ -158,44 +191,68 @@ function App() {
   }
 
   return (
-    <Box>
+    <Flex direction="column" minH="100vh" bg={settings?.backgroundColor}>
       <Flex as="header" p="4" borderBottomWidth="1px" alignItems="center">
-        <Heading size="md">Kolder</Heading>
+        <Heading size="md">{settings?.title || 'Kolder'}</Heading>
         <Spacer />
+        <IconButton
+            onClick={() => setCurrentView('analytics')}
+            icon={<ViewIcon />}
+            aria-label="Analytics"
+            mr={2}
+        />
+        <IconButton
+            onClick={onSettingsOpen}
+            icon={<SettingsIcon />}
+            aria-label="Settings"
+            mr={2}
+        />
         <Button onClick={toggleColorMode}>
           {colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
         </Button>
       </Flex>
-      <Flex>
-        <Box as="aside" w="250px" p="4" borderRightWidth="1px">
-          <CategoryTree
-            categories={categories}
-            onAdd={handleOpenAddCategoryModal}
-            onEdit={handleEditCategory}
-            onDelete={handleDeleteCategory}
-            onSelectCategory={handleSelectCategory}
-            selectedCategory={selectedCategory}
-          />
-        </Box>
-        <Box as="main" flex="1" p="4">
-          {selectedSnippet ? (
-            <SnippetViewer snippet={selectedSnippet} onBack={handleBackToList} />
-          ) : (
-            <SnippetList
-              snippets={filteredSnippets}
-              selectedCategory={selectedCategory}
-              onAdd={handleAddSnippet}
-              onEdit={handleEditSnippet}
-              onDelete={handleDeleteSnippet}
-              onSelectSnippet={handleSelectSnippet}
+      {currentView === 'analytics' ? (
+        <AnalyticsPage onBack={() => setCurrentView('main')} snippets={snippets} setSnippets={setSnippets}/>
+      ) : (
+        <Flex flex="1">
+            <Box as="aside" w="250px" p="4" borderRightWidth="1px" bg={colorMode === 'light' ? 'whiteAlpha.800' : 'gray.800'}>
+            <CategoryTree
+                categories={categories}
+                onAdd={handleOpenAddCategoryModal}
+                onEdit={handleEditCategory}
+                onDelete={handleDeleteCategory}
+                onSelectCategory={handleSelectCategory}
+                selectedCategory={selectedCategory}
             />
-          )}
-        </Box>
-      </Flex>
+            </Box>
+            <Box as="main" flex="1" p="4">
+            {selectedSnippet ? (
+                <SnippetViewer snippet={selectedSnippet} onBack={handleBackToList} />
+            ) : (
+                <SnippetList
+                snippets={filteredSnippets}
+                selectedCategory={selectedCategory}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                onAdd={handleAddSnippet}
+                onEdit={handleEditSnippet}
+                onDelete={handleDeleteSnippet}
+                onSelectSnippet={handleSelectSnippet}
+                />
+            )}
+            </Box>
+        </Flex>
+      )}
       <AddCategoryModal
         isOpen={isAddCategoryOpen}
         onClose={onAddCategoryClose}
         onAdd={handleAddCategory}
+      />
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={onSettingsClose}
+        onSave={handleSaveSettings}
+        settings={settings}
       />
     </Box>
   );
