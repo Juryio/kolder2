@@ -174,12 +174,19 @@ function App() {
     }
   };
 
-  const filteredSnippets = snippets
-    .filter(snippet => snippet.categoryId === selectedCategory)
-    .filter(snippet =>
-      snippet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      snippet.content.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  const handleSearchChange = (term) => {
+      setSearchTerm(term);
+      if(term) {
+          setSelectedCategory(null);
+      }
+  }
+
+  const filteredSnippets = searchTerm
+    ? snippets.filter(snippet =>
+        snippet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        snippet.content.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : snippets.filter(snippet => snippet.categoryId === selectedCategory);
 
   if (loading) {
     return (
@@ -229,9 +236,9 @@ function App() {
             ) : (
                 <SnippetList
                 snippets={filteredSnippets}
-                selectedCategory={selectedCategory}
+              categories={categories}
                 searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
+              onSearchChange={handleSearchChange}
                 onAdd={handleAddSnippet}
                 onEdit={handleEditSnippet}
                 onDelete={handleDeleteSnippet}
