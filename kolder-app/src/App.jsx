@@ -254,7 +254,7 @@ function App() {
         onSave={handleSaveSettings}
         settings={settings}
       />
-    </Box>
+    </Flex>
   );
 }
 
