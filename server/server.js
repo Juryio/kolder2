@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 const mongoose = require('mongoose');
-const { Category, Snippet, Settings } = require('./models');
+const { Category, Snippet, Settings, StartingSnippet } = require('./models');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -158,6 +158,30 @@ app.post('/api/analytics/reset', async (req, res) => {
         await Snippet.updateMany({}, { useCount: 0 });
         const updatedSnippets = await Snippet.find();
         res.status(200).json(updatedSnippets);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+
+// --- API Endpoints for Starting Snippets ---
+app.get('/api/starting-snippets', async (req, res) => {
+    try {
+        const snippets = await StartingSnippet.find();
+        res.json(snippets);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/starting-snippets', async (req, res) => {
+    try {
+        const newSnippet = new StartingSnippet(req.body);
+        await newSnippet.save();
+        res.status(201).json(newSnippet);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/starting-snippets/:id', async (req, res) => {
+    try {
+        await StartingSnippet.findByIdAndDelete(req.params.id);
+        res.status(204).send();
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

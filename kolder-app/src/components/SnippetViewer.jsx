@@ -8,23 +8,34 @@ import {
   FormLabel,
   Input,
   Text,
-  useClipboard,
   VStack,
 } from '@chakra-ui/react';
 import { ArrowBackIcon } from '@chakra-ui/icons';
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:3001/api',
+    baseURL: '/api',
 });
 
 const SnippetViewer = ({ snippet, onBack, settings }) => {
   const [placeholders, setPlaceholders] = useState({});
   const [output, setOutput] = useState('');
-  const { hasCopied, onCopy } = useClipboard(output);
+  const [hasCopied, setHasCopied] = useState(false);
 
   const handleCopy = () => {
-    onCopy();
+    // 1. Create a temporary element to parse the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = output;
+    // 2. Get the plain text content
+    const plainText = tempDiv.textContent || tempDiv.innerText || '';
+
+    // 3. Use the Clipboard API to copy the plain text
+    navigator.clipboard.writeText(plainText).then(() => {
+        setHasCopied(true);
+        setTimeout(() => setHasCopied(false), 2000); // Reset after 2 seconds
+    });
+
+    // 4. Track the usage via API
     api.post(`/snippets/${snippet._id}/track`).catch(err => console.error("Failed to track copy", err));
   }
 

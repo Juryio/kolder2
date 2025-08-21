@@ -11,13 +11,14 @@ import {
   IconButton,
   Image,
 } from '@chakra-ui/react';
-import { SettingsIcon, ViewIcon } from '@chakra-ui/icons';
+import { SettingsIcon, ViewIcon, AddIcon } from '@chakra-ui/icons';
 import CategoryTree from './components/CategoryTree';
 import SnippetList from './components/SnippetList';
 import SnippetViewer from './components/SnippetViewer';
 import AddCategoryModal from './components/AddCategoryModal';
 import SettingsModal from './components/SettingsModal';
 import AnalyticsPage from './components/AnalyticsPage';
+import StartingSnippetManager from './components/StartingSnippetManager';
 
 const api = axios.create({
   baseURL: '/api',
@@ -33,6 +34,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState(null);
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
+  const { isOpen: isStartingSnippetOpen, onOpen: onStartingSnippetOpen, onClose: onStartingSnippetClose } = useDisclosure();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentView, setCurrentView] = useState('main'); // 'main' or 'analytics'
 
@@ -185,6 +187,13 @@ function App() {
             bg={settings?.theme.accentColor}
         />
         <IconButton
+            onClick={onStartingSnippetOpen}
+            icon={<AddIcon />}
+            aria-label="Manage Starting Snippets"
+            mr={2}
+            bg={settings?.theme.accentColor}
+        />
+        <IconButton
             onClick={onSettingsOpen}
             icon={<SettingsIcon />}
             aria-label="Settings"
@@ -236,6 +245,11 @@ function App() {
         isOpen={isSettingsOpen}
         onClose={onSettingsClose}
         onSave={handleSaveSettings}
+        settings={settings}
+      />
+      <StartingSnippetManager
+        isOpen={isStartingSnippetOpen}
+        onClose={onStartingSnippetClose}
         settings={settings}
       />
     </Flex>
