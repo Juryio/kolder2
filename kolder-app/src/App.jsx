@@ -10,8 +10,9 @@ import {
   Spinner,
   IconButton,
   Image,
+  useToast,
 } from '@chakra-ui/react';
-import { SettingsIcon, ViewIcon, AddIcon } from '@chakra-ui/icons';
+import { SettingsIcon, ViewIcon, AddIcon, WarningIcon } from '@chakra-ui/icons';
 import CategoryTree from './components/CategoryTree';
 import SnippetList from './components/SnippetList';
 import SnippetViewer from './components/SnippetViewer';
@@ -19,6 +20,7 @@ import AddCategoryModal from './components/AddCategoryModal';
 import SettingsModal from './components/SettingsModal';
 import AnalyticsPage from './components/AnalyticsPage';
 import StartingSnippetManager from './components/StartingSnippetManager';
+import DebugView from './components/DebugView';
 
 const api = axios.create({
   baseURL: '/api',
@@ -36,7 +38,18 @@ function App() {
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
   const { isOpen: isStartingSnippetOpen, onOpen: onStartingSnippetOpen, onClose: onStartingSnippetClose } = useDisclosure();
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentView, setCurrentView] = useState('main'); // 'main' or 'analytics'
+  const [currentView, setCurrentView] = useState('main'); // 'main', 'analytics', or 'debug'
+  const toast = useToast();
+
+  const showErrorToast = (description = 'An unknown error occurred.') => {
+      toast({
+          title: 'An error occurred.',
+          description: description,
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+      });
+  };
 
   const handleOpenAddCategoryModal = (parentId = null) => {
     setAddCategoryParentId(parentId);
@@ -64,6 +77,7 @@ function App() {
         setSettings(settingsResponse.data);
       } catch (error) {
         console.error('Error fetching data:', error);
+        showErrorToast('Could not fetch initial data from the server.');
       } finally {
         setLoading(false);
       }
@@ -89,6 +103,7 @@ function App() {
       setSettings(response.data);
     } catch (error) {
       console.error('Error saving settings:', error);
+      showErrorToast('Could not save settings.');
     }
   };
 
@@ -98,6 +113,7 @@ function App() {
       await fetchAllData();
     } catch (error) {
       console.error('Error adding category:', error);
+      showErrorToast('Could not add category. ' + (error.response?.data?.error || ''));
     }
   };
 
@@ -107,6 +123,7 @@ function App() {
       await fetchAllData();
     } catch (error) {
       console.error('Error editing category:', error);
+      showErrorToast('Could not edit category.');
     }
   };
 
@@ -116,6 +133,7 @@ function App() {
       await fetchAllData();
     } catch (error) {
       console.error('Error deleting category:', error);
+      showErrorToast('Could not delete category.');
     }
   };
 
@@ -125,11 +143,16 @@ function App() {
   }
 
   const handleAddSnippet = async (snippet) => {
+    if (!selectedCategory) {
+        showErrorToast('Cannot add snippet. Please select a category first.');
+        return;
+    }
     try {
       await api.post('/snippets', { ...snippet, categoryId: selectedCategory });
       await fetchAllData();
     } catch (error) {
       console.error('Error adding snippet:', error);
+      showErrorToast('Could not add snippet.');
     }
   };
 
@@ -139,6 +162,7 @@ function App() {
       await fetchAllData();
     } catch (error) {
       console.error('Error editing snippet:', error);
+      showErrorToast('Could not edit snippet.');
     }
   };
 
@@ -148,6 +172,7 @@ function App() {
       await fetchAllData();
     } catch (error) {
       console.error('Error deleting snippet:', error);
+      showErrorToast('Could not delete snippet.');
     }
   };
 
@@ -165,6 +190,51 @@ function App() {
       )
     : snippets.filter(snippet => snippet.categoryId === selectedCategory);
 
+  const MainView = () => (
+    <Flex flex="1">
+        <Box as="aside" w="300px" p="4" borderRightWidth="1px" bg={settings?.theme.contentBackgroundColor} borderColor={settings?.theme.contentBackgroundColor} overflowX="auto">
+        <CategoryTree
+            settings={settings}
+            categories={categories}
+            onAdd={handleOpenAddCategoryModal}
+            onEdit={handleEditCategory}
+            onDelete={handleDeleteCategory}
+            onSelectCategory={handleSelectCategory}
+            selectedCategory={selectedCategory}
+        />
+        </Box>
+        <Box as="main" flex="1" p="4">
+        {selectedSnippet ? (
+            <SnippetViewer snippet={selectedSnippet} onBack={handleBackToList} settings={settings} />
+        ) : (
+            <SnippetList
+            snippets={filteredSnippets}
+            categories={categories}
+            searchTerm={searchTerm}
+            onSearchChange={handleSearchChange}
+            onAdd={handleAddSnippet}
+            onEdit={handleEditSnippet}
+            onDelete={handleDeleteSnippet}
+            onSelectSnippet={handleSelectSnippet}
+            settings={settings}
+            />
+        )}
+        </Box>
+    </Flex>
+  );
+
+  const renderView = () => {
+      switch(currentView) {
+          case 'analytics':
+              return <AnalyticsPage onBack={() => setCurrentView('main')} snippets={snippets} setSnippets={setSnippets} settings={settings}/>;
+          case 'debug':
+              return <DebugView onBack={() => setCurrentView('main')} {...{categories, snippets, selectedCategory, selectedSnippet, settings, searchTerm}} />;
+          case 'main':
+          default:
+              return <MainView />;
+      }
+  }
+
   if (loading) {
     return (
       <Flex justify="center" align="center" h="100vh">
@@ -179,6 +249,13 @@ function App() {
         {settings?.icon && <Image src={settings.icon} alt="App Icon" boxSize="32px" mr={3} />}
         <Heading size="md">{settings?.title || 'Kolder'}</Heading>
         <Spacer />
+        <IconButton
+            onClick={() => setCurrentView('debug')}
+            icon={<WarningIcon />}
+            aria-label="Debug View"
+            mr={2}
+            bg="orange.500"
+        />
         <IconButton
             onClick={() => setCurrentView('analytics')}
             icon={<ViewIcon />}
@@ -201,40 +278,7 @@ function App() {
             bg={settings?.theme.accentColor}
         />
       </Flex>
-      {currentView === 'analytics' ? (
-        <AnalyticsPage onBack={() => setCurrentView('main')} snippets={snippets} setSnippets={setSnippets} settings={settings}/>
-      ) : (
-        <Flex flex="1">
-            <Box as="aside" w="300px" p="4" borderRightWidth="1px" bg={settings?.theme.contentBackgroundColor} borderColor={settings?.theme.contentBackgroundColor} overflowX="auto">
-            <CategoryTree
-                settings={settings}
-                categories={categories}
-                onAdd={handleOpenAddCategoryModal}
-                onEdit={handleEditCategory}
-                onDelete={handleDeleteCategory}
-                onSelectCategory={handleSelectCategory}
-                selectedCategory={selectedCategory}
-            />
-            </Box>
-            <Box as="main" flex="1" p="4">
-            {selectedSnippet ? (
-                <SnippetViewer snippet={selectedSnippet} onBack={handleBackToList} settings={settings} />
-            ) : (
-                <SnippetList
-                snippets={filteredSnippets}
-                categories={categories}
-                searchTerm={searchTerm}
-                onSearchChange={handleSearchChange}
-                onAdd={handleAddSnippet}
-                onEdit={handleEditSnippet}
-                onDelete={handleDeleteSnippet}
-                onSelectSnippet={handleSelectSnippet}
-                settings={settings}
-                />
-            )}
-            </Box>
-        </Flex>
-      )}
+      {renderView()}
       <AddCategoryModal
         isOpen={isAddCategoryOpen}
         onClose={onAddCategoryClose}
