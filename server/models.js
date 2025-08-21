@@ -24,8 +24,14 @@ const settingsSchema = new mongoose.Schema({
     }
 });
 
+const startingSnippetSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    content: { type: String, required: true },
+});
+
 const Category = mongoose.model('Category', categorySchema);
 const Snippet = mongoose.model('Snippet', snippetSchema);
 const Settings = mongoose.model('Settings', settingsSchema);
+const StartingSnippet = mongoose.model('StartingSnippet', startingSnippetSchema);
 
-module.exports = { Category, Snippet, Settings };
+module.exports = { Category, Snippet, Settings, StartingSnippet };

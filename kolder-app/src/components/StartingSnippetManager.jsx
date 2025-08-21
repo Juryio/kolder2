@@ -1,0 +1,134 @@
+import { useState, useEffect } from 'react';
+import {
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  FormControl,
+  FormLabel,
+  Input,
+  Button,
+  VStack,
+  HStack,
+  Text,
+  IconButton,
+  useToast,
+  Textarea,
+  Heading,
+  Box
+} from '@chakra-ui/react';
+import { DeleteIcon } from '@chakra-ui/icons';
+import axios from 'axios';
+
+const api = axios.create({
+    baseURL: '/api',
+});
+
+const StartingSnippetManager = ({ isOpen, onClose, settings }) => {
+    const [startingSnippets, setStartingSnippets] = useState([]);
+    const [newName, setNewName] = useState('');
+    const [newContent, setNewContent] = useState('');
+    const toast = useToast();
+
+    const fetchData = async () => {
+        try {
+            const response = await api.get('/starting-snippets');
+            setStartingSnippets(response.data);
+        } catch (error) {
+            console.error('Error fetching starting snippets', error);
+        }
+    };
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchData();
+        }
+    }, [isOpen]);
+
+    const handleAdd = async () => {
+        if (!newName.trim() || !newContent.trim()) {
+            toast({ title: 'Name and content are required.', status: 'error', duration: 2000, isClosable: true });
+            return;
+        }
+        try {
+            await api.post('/starting-snippets', { name: newName, content: newContent });
+            setNewName('');
+            setNewContent('');
+            fetchData(); // Refetch to show the new snippet
+            toast({ title: 'Starting snippet added.', status: 'success', duration: 2000, isClosable: true });
+        } catch (error) {
+            console.error('Error adding starting snippet', error);
+            toast({ title: 'Error adding snippet.', status: 'error', duration: 2000, isClosable: true });
+        }
+    };
+
+    const handleDelete = async (id) => {
+        try {
+            await api.delete(`/starting-snippets/${id}`);
+            fetchData(); // Refetch
+            toast({ title: 'Starting snippet deleted.', status: 'success', duration: 2000, isClosable: true });
+        } catch (error) {
+            console.error('Error deleting starting snippet', error);
+            toast({ title: 'Error deleting snippet.', status: 'error', duration: 2000, isClosable: true });
+        }
+    };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} size="xl" scrollBehavior="inside">
+      <ModalOverlay />
+      <ModalContent bg={settings?.theme.contentBackgroundColor} color={settings?.theme.textColor}>
+        <ModalHeader>Manage Starting Snippets</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+            <VStack spacing={6} align="stretch">
+                {/* Add Form */}
+                <Box>
+                    <Heading size="md" mb={3}>Add New</Heading>
+                    <FormControl>
+                        <FormLabel>Name</FormLabel>
+                        <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g., 'Polite Greeting'"/>
+                    </FormControl>
+                    <FormControl mt={3}>
+                        <FormLabel>Content</FormLabel>
+                        <Textarea value={newContent} onChange={(e) => setNewContent(e.target.value)} placeholder="e.g., 'Hello, I hope you are well.'"/>
+                    </FormControl>
+                    <Button
+                        mt={4}
+                        onClick={handleAdd}
+                        bgGradient={`linear(to-r, ${settings?.theme.accentColor}, purple.500)`}
+                        _hover={{
+                            bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`
+                        }}
+                    >
+                        Add Starting Snippet
+                    </Button>
+                </Box>
+                {/* List */}
+                <Box>
+                     <Heading size="md" mb={3}>Existing</Heading>
+                     <VStack spacing={3} align="stretch">
+                        {startingSnippets.length > 0 ? startingSnippets.map(ss => (
+                            <HStack key={ss._id} justify="space-between" p={3} borderWidth="1px" borderRadius="md">
+                                <Box>
+                                    <Text fontWeight="bold">{ss.name}</Text>
+                                    <Text fontSize="sm" color="gray.400" noOfLines={1}>{ss.content}</Text>
+                                </Box>
+                                <IconButton aria-label="Delete starting snippet" icon={<DeleteIcon />} size="sm" onClick={() => handleDelete(ss._id)} />
+                            </HStack>
+                        )) : <Text>No starting snippets created yet.</Text>}
+                     </VStack>
+                </Box>
+            </VStack>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" onClick={onClose}>Close</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+};
+
+export default StartingSnippetManager;
