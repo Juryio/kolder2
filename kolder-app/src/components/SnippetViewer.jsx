@@ -55,13 +55,37 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
   }, [prefix, placeholders, snippet]);
 
   const handleCopy = () => {
+    // 1. Convert HTML to plain text
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = output;
     const plainText = tempDiv.textContent || tempDiv.innerText || '';
-    navigator.clipboard.writeText(plainText).then(() => {
-        setHasCopied(true);
-        setTimeout(() => setHasCopied(false), 2000);
-    });
+
+    // 2. Try modern clipboard API, with fallback for insecure contexts
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(plainText).then(() => {
+            setHasCopied(true);
+            setTimeout(() => setHasCopied(false), 2000);
+        });
+    } else {
+        // Fallback for insecure contexts (http) or older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = plainText;
+        textArea.style.position = "fixed";  // Avoid scrolling to bottom
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            setHasCopied(true);
+            setTimeout(() => setHasCopied(false), 2000);
+        } catch (err) {
+            console.error('Fallback: Oops, unable to copy', err);
+        }
+        document.body.removeChild(textArea);
+    }
+
+    // 3. Track usage
     api.post(`/snippets/${snippet._id}/track`).catch(err => console.error("Failed to track copy", err));
   }
 
