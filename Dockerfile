@@ -2,10 +2,19 @@
 FROM node:18-alpine AS builder-fe
 
 WORKDIR /app
+
+# Copy package files and install dependencies first to leverage Docker cache
 COPY kolder-app/package.json kolder-app/package-lock.json ./kolder-app/
 RUN cd kolder-app && npm install
 
+# Copy the rest of the frontend source code
 COPY kolder-app/ ./kolder-app/
+
+# --- DIAGNOSTIC STEP ---
+# List the contents of the src directory to verify the correct files are copied.
+RUN echo "--- Listing Frontend Source Files ---" && ls -laR kolder-app/src
+
+# Build the frontend
 RUN cd kolder-app && npm run build
 
 
