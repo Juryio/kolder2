@@ -196,7 +196,7 @@ function App() {
         <AnalyticsPage onBack={() => setCurrentView('main')} snippets={snippets} setSnippets={setSnippets} settings={settings}/>
       ) : (
         <Flex flex="1">
-            <Box as="aside" w="250px" p="4" borderRightWidth="1px" bg={settings?.theme.contentBackgroundColor} borderColor={settings?.theme.contentBackgroundColor}>
+            <Box as="aside" w="300px" p="4" borderRightWidth="1px" bg={settings?.theme.contentBackgroundColor} borderColor={settings?.theme.contentBackgroundColor} overflowX="auto">
             <CategoryTree
                 settings={settings}
                 categories={categories}
