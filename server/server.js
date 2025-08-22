@@ -34,10 +34,16 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
 const buildTree = (categories, parentId = null) => {
     const tree = [];
     categories
-        .filter(cat => String(cat.parentId) === String(parentId))
+        .filter(cat => {
+            // Handle root categories (parentId is null)
+            if (parentId === null) {
+                return cat.parentId === null;
+            }
+            // Handle child categories (compare ObjectId)
+            return cat.parentId && cat.parentId.equals(parentId);
+        })
         .forEach(cat => {
             const children = buildTree(categories, cat._id);
-            // Mongoose documents are not easily extensible, so we convert to a plain object
             const catObj = cat.toObject();
             tree.push({
                 ...catObj,
