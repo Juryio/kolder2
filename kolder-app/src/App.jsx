@@ -35,8 +35,16 @@ function App() {
   const [settings, setSettings] = useState(null);
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
   const { isOpen: isStartingSnippetOpen, onOpen: onStartingSnippetOpen, onClose: onStartingSnippetClose } = useDisclosure();
+  const [openCategories, setOpenCategories] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [currentView, setCurrentView] = useState('main'); // 'main' or 'analytics'
+
+  const handleToggleCategory = (categoryId) => {
+    setOpenCategories(prev => ({
+        ...prev,
+        [categoryId]: !prev[categoryId]
+    }));
+  };
 
   const handleOpenAddCategoryModal = (parentId = null) => {
     setAddCategoryParentId(parentId);
@@ -181,6 +189,8 @@ function App() {
             onDelete={handleDeleteCategory}
             onSelectCategory={handleSelectCategory}
             selectedCategory={selectedCategory}
+                openCategories={openCategories}
+                onToggleCategory={handleToggleCategory}
         />
         </Box>
         <Box as="main" flex="1" p="4">

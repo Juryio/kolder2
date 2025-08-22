@@ -6,25 +6,29 @@ import {
   Heading,
   IconButton,
   Input,
-  useDisclosure,
   Collapse,
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon, EditIcon, ChevronDownIcon, ChevronRightIcon } from '@chakra-ui/icons';
 
-const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory, settings }) => {
-  const { isOpen, onToggle } = useDisclosure();
+const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory, settings, openCategories, onToggleCategory }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(category.name);
+
+  const isOpen = !!openCategories[category._id];
 
   const handleUpdate = () => {
     if(newName.trim() === '') {
         setNewName(category.name);
-        setIsEditing(false);
-        return;
+    } else {
+        onEdit(category._id, newName);
     }
-    onEdit(category._id, newName);
     setIsEditing(false);
   };
+
+  const handleNameClick = () => {
+      onSelectCategory(category._id);
+      onToggleCategory(category._id);
+  }
 
   const isSelected = selectedCategory === category._id;
 
@@ -34,9 +38,10 @@ const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, sel
         <IconButton
           size="xs"
           mr="2"
+          color={settings?.theme.textColor}
           variant="ghost"
           icon={isOpen ? <ChevronDownIcon /> : <ChevronRightIcon />}
-          onClick={onToggle}
+          onClick={() => onToggleCategory(category._id)}
           visibility={category.children.length > 0 ? 'visible' : 'hidden'}
         />
         {isEditing ? (
@@ -52,7 +57,7 @@ const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, sel
             size="sm"
             cursor="pointer"
             onDoubleClick={() => setIsEditing(true)}
-            onClick={() => onSelectCategory(category._id)}
+            onClick={handleNameClick}
             bg={isSelected ? settings?.theme.accentColor : 'transparent'}
             p="1"
             borderRadius="md"
@@ -84,6 +89,8 @@ const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, sel
             onSelectCategory={onSelectCategory}
             selectedCategory={selectedCategory}
             settings={settings}
+            openCategories={openCategories}
+            onToggleCategory={onToggleCategory}
           />
         ))}
       </Collapse>
@@ -91,7 +98,7 @@ const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, sel
   );
 };
 
-const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory, settings }) => {
+const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory, settings, openCategories, onToggleCategory }) => {
   return (
     <Box>
       <Flex align="center" mb="4">
@@ -118,6 +125,8 @@ const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, s
           onSelectCategory={onSelectCategory}
           selectedCategory={selectedCategory}
           settings={settings}
+          openCategories={openCategories}
+          onToggleCategory={onToggleCategory}
         />
       ))}
     </Box>

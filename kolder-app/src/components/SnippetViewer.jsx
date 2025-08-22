@@ -35,12 +35,25 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
   // Set placeholders when snippet changes
   useEffect(() => {
     if (!snippet.content) return;
-    const placeholderRegex = /{{(.*?)}}/g;
+    // Regex to find {{...}} or {...}
+    const placeholderRegex = /{{(.*?)}}|\{(.*?)\}/g;
     const foundPlaceholders = [...snippet.content.matchAll(placeholderRegex)];
     const initialPlaceholders = {};
+
+    // Use a Set to store unique placeholder names
+    const placeholderNames = new Set();
     foundPlaceholders.forEach(match => {
-        initialPlaceholders[match[1]] = '';
+        // The name is in either capture group 1 or 2
+        const name = match[1] || match[2];
+        if (name) {
+            placeholderNames.add(name.trim());
+        }
     });
+
+    placeholderNames.forEach(name => {
+        initialPlaceholders[name] = '';
+    });
+
     setPlaceholders(initialPlaceholders);
     setPrefix(''); // Reset prefix when snippet changes
   }, [snippet]);
@@ -49,28 +62,27 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
   useEffect(() => {
     let snippetWithPlaceholders = snippet.content || '';
     for (const key in placeholders) {
-      snippetWithPlaceholders = snippetWithPlaceholders.replace(new RegExp(`{{${key}}}`, 'g'), placeholders[key]);
+      // Create a regex that matches both {{key}} and {key}
+      const replacementRegex = new RegExp(`{{${key}}}|{${key}}`, 'g');
+      snippetWithPlaceholders = snippetWithPlaceholders.replace(replacementRegex, placeholders[key]);
     }
     setOutput(prefix + snippetWithPlaceholders);
   }, [prefix, placeholders, snippet]);
 
   const handleCopy = () => {
-    // 1. Convert HTML to plain text
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = output;
     const plainText = tempDiv.textContent || tempDiv.innerText || '';
 
-    // 2. Try modern clipboard API, with fallback for insecure contexts
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(plainText).then(() => {
             setHasCopied(true);
             setTimeout(() => setHasCopied(false), 2000);
         });
     } else {
-        // Fallback for insecure contexts (http) or older browsers
         const textArea = document.createElement("textarea");
         textArea.value = plainText;
-        textArea.style.position = "fixed";  // Avoid scrolling to bottom
+        textArea.style.position = "fixed";
         textArea.style.left = "-9999px";
         document.body.appendChild(textArea);
         textArea.focus();
@@ -85,7 +97,6 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
         document.body.removeChild(textArea);
     }
 
-    // 3. Track usage
     api.post(`/snippets/${snippet._id}/track`).catch(err => console.error("Failed to track copy", err));
   }
 

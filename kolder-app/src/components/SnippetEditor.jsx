@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -12,6 +12,7 @@ import {
   Input,
   Button,
   VStack,
+  Flex,
 } from '@chakra-ui/react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -20,6 +21,7 @@ import './quill.css';
 const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
   const [name, setName] = useState('');
   const [content, setContent] = useState('');
+  const quillRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -38,6 +40,16 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
     onClose();
   };
 
+  const handleInsertPlaceholder = () => {
+      const placeholderName = prompt('Enter placeholder name (e.g., customer_name):');
+      if (placeholderName && placeholderName.trim() !== '') {
+          const editor = quillRef.current.getEditor();
+          const range = editor.getSelection(true); // true for focus
+          // Using double braces as the primary format
+          editor.insertText(range.index, `{{${placeholderName.trim()}}}`);
+      }
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="xl">
       <ModalOverlay />
@@ -51,8 +63,11 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
                 <Input value={name} onChange={(e) => setName(e.target.value)} />
             </FormControl>
             <FormControl>
-                <FormLabel>Content</FormLabel>
-                <ReactQuill theme="snow" value={content} onChange={setContent} />
+                <Flex justify="space-between" align="center">
+                    <FormLabel mb="0">Content</FormLabel>
+                    <Button size="xs" onClick={handleInsertPlaceholder}>Insert Placeholder</Button>
+                </Flex>
+                <ReactQuill ref={quillRef} theme="snow" value={content} onChange={setContent} style={{marginTop: '8px'}}/>
             </FormControl>
           </VStack>
         </ModalBody>
