@@ -24,6 +24,61 @@ const api = axios.create({
   baseURL: '/api',
 });
 
+// Moved MainView outside of the App component to prevent re-renders
+const MainView = ({
+    settings,
+    categories,
+    onOpenAddCategoryModal,
+    onEditCategory,
+    onDeleteCategory,
+    onSelectCategory,
+    selectedCategory,
+    openCategories,
+    onToggleCategory,
+    selectedSnippet,
+    onBackToList,
+    snippets,
+    searchTerm,
+    onSearchChange,
+    onAddSnippet,
+    onEditSnippet,
+    onDeleteSnippet,
+    onSelectSnippet,
+}) => (
+    <Flex flex="1">
+        <Box as="aside" w="300px" p="4" borderRightWidth="1px" bg={settings?.theme.contentBackgroundColor} borderColor={settings?.theme.contentBackgroundColor} overflowX="auto">
+            <CategoryTree
+                settings={settings}
+                categories={categories}
+                onAdd={onOpenAddCategoryModal}
+                onEdit={onEditCategory}
+                onDelete={onDeleteCategory}
+                onSelectCategory={onSelectCategory}
+                selectedCategory={selectedCategory}
+                openCategories={openCategories}
+                onToggleCategory={onToggleCategory}
+            />
+        </Box>
+        <Box as="main" flex="1" p="4">
+            {selectedSnippet ? (
+                <SnippetViewer snippet={selectedSnippet} onBack={onBackToList} settings={settings} />
+            ) : (
+                <SnippetList
+                    snippets={snippets}
+                    categories={categories}
+                    searchTerm={searchTerm}
+                    onSearchChange={onSearchChange}
+                    onAdd={onAddSnippet}
+                    onEdit={onEditSnippet}
+                    onDelete={onDeleteSnippet}
+                    onSelectSnippet={onSelectSnippet}
+                    settings={settings}
+                />
+            )}
+        </Box>
+    </Flex>
+);
+
 function App() {
   const [categories, setCategories] = useState([]);
   const [snippets, setSnippets] = useState([]);
@@ -178,48 +233,32 @@ function App() {
       )
     : snippets.filter(snippet => snippet.categoryId === selectedCategory);
 
-  const MainView = () => (
-    <Flex flex="1">
-        <Box as="aside" w="300px" p="4" borderRightWidth="1px" bg={settings?.theme.contentBackgroundColor} borderColor={settings?.theme.contentBackgroundColor} overflowX="auto">
-        <CategoryTree
-            settings={settings}
-            categories={categories}
-            onAdd={handleOpenAddCategoryModal}
-            onEdit={handleEditCategory}
-            onDelete={handleDeleteCategory}
-            onSelectCategory={handleSelectCategory}
-            selectedCategory={selectedCategory}
-                openCategories={openCategories}
-                onToggleCategory={handleToggleCategory}
-        />
-        </Box>
-        <Box as="main" flex="1" p="4">
-        {selectedSnippet ? (
-            <SnippetViewer snippet={selectedSnippet} onBack={handleBackToList} settings={settings} />
-        ) : (
-            <SnippetList
-            snippets={filteredSnippets}
-            categories={categories}
-            searchTerm={searchTerm}
-            onSearchChange={handleSearchChange}
-            onAdd={handleAddSnippet}
-            onEdit={handleEditSnippet}
-            onDelete={handleDeleteSnippet}
-            onSelectSnippet={handleSelectSnippet}
-            settings={settings}
-            />
-        )}
-        </Box>
-    </Flex>
-  );
-
   const renderView = () => {
       switch(currentView) {
           case 'analytics':
               return <AnalyticsPage onBack={() => setCurrentView('main')} snippets={snippets} setSnippets={setSnippets} settings={settings}/>;
           case 'main':
           default:
-              return <MainView />;
+              return <MainView
+                  settings={settings}
+                  categories={categories}
+                  onOpenAddCategoryModal={handleOpenAddCategoryModal}
+                  onEditCategory={handleEditCategory}
+                  onDeleteCategory={handleDeleteCategory}
+                  onSelectCategory={handleSelectCategory}
+                  selectedCategory={selectedCategory}
+                  openCategories={openCategories}
+                  onToggleCategory={handleToggleCategory}
+                  selectedSnippet={selectedSnippet}
+                  onBackToList={handleBackToList}
+                  snippets={filteredSnippets}
+                  searchTerm={searchTerm}
+                  onSearchChange={handleSearchChange}
+                  onAddSnippet={handleAddSnippet}
+                  onEditSnippet={handleEditSnippet}
+                  onDeleteSnippet={handleDeleteSnippet}
+                  onSelectSnippet={handleSelectSnippet}
+              />;
       }
   }
 
