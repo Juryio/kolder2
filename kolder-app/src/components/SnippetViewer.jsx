@@ -24,18 +24,19 @@ const api = axios.create({
 
 // A new sub-component to manage the date variables UI in the viewer
 const DateManager = ({ content, dateValues, onDateChange }) => {
-    const expressionRegex = /{{\s*date_(\d+)(?:\s*[+-]\s*\d+\s*[dwmy])?\s*}}/g;
-    const baseVarRegex = /date_(\d+)/;
+    const placeholderRegex = /{{\s*([^}]+)\s*}}/g;
+    const dateVarRegex = /^date:(\w+)/; // Matches "date:name" at the start of an expression
 
-    const found = content.matchAll(expressionRegex);
+    const found = content.matchAll(placeholderRegex);
     const baseVars = new Set();
     for (const match of found) {
-        const baseVarMatch = match[0].match(baseVarRegex);
-        if (baseVarMatch) {
-            baseVars.add(baseVarMatch[0]);
+        const expression = match[1]; // e.g., "date:invoice_date + 5d"
+        const dateVarMatch = expression.match(dateVarRegex);
+        if (dateVarMatch) {
+            // dateVarMatch[1] will be "invoice_date"
+            baseVars.add(dateVarMatch[1]);
         }
     }
-
     const uniqueBaseVars = [...baseVars];
 
     if (uniqueBaseVars.length === 0) {
@@ -52,7 +53,7 @@ const DateManager = ({ content, dateValues, onDateChange }) => {
                         selected={dateValues[varName] ? new Date(dateValues[varName]) : null}
                         onChange={date => onDateChange(varName, date)}
                         customInput={<Input />}
-                        dateFormat="yyyy-MM-dd"
+                        dateFormat="dd.MM.yyyy"
                         isClearable
                     />
                 </FormControl>
@@ -80,8 +81,8 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
   useEffect(() => {
     if (!snippet.content) return;
 
-    // This regex now finds simple {{placeholders}} but ignores the {{date_...}} ones
-    const placeholderRegex = /{{\s*(?!date_)([^}]+)\s*}}/g;
+    // This regex now finds simple {{placeholders}} but ignores the {{date:...}} ones
+    const placeholderRegex = /{{\s*(?!date:)([^}]+)\s*}}/g;
     const foundPlaceholders = [...snippet.content.matchAll(placeholderRegex)];
     const initialPlaceholders = {};
 
