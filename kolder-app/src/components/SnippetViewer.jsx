@@ -14,13 +14,56 @@ import {
 } from '@chakra-ui/react';
 import { ArrowBackIcon } from '@chakra-ui/icons';
 import axios from 'axios';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import './quill.css'; // For consistent styling if needed
 
 const api = axios.create({
     baseURL: '/api',
 });
 
+// A new sub-component to manage the date variables UI in the viewer
+const DateManager = ({ content, dateValues, onDateChange }) => {
+    const expressionRegex = /{{\s*date_(\d+)(?:\s*[+-]\s*\d+\s*[dwmy])?\s*}}/g;
+    const baseVarRegex = /date_(\d+)/;
+
+    const found = content.matchAll(expressionRegex);
+    const baseVars = new Set();
+    for (const match of found) {
+        const baseVarMatch = match[0].match(baseVarRegex);
+        if (baseVarMatch) {
+            baseVars.add(baseVarMatch[0]);
+        }
+    }
+
+    const uniqueBaseVars = [...baseVars];
+
+    if (uniqueBaseVars.length === 0) {
+        return null;
+    }
+
+    return (
+        <Box mt={4}>
+            <Heading size="sm" mb="2">Set Dates</Heading>
+            {uniqueBaseVars.map(varName => (
+                <FormControl key={varName} mt="2">
+                    <FormLabel>{varName}</FormLabel>
+                    <DatePicker
+                        selected={dateValues[varName] ? new Date(dateValues[varName]) : null}
+                        onChange={date => onDateChange(varName, date)}
+                        customInput={<Input />}
+                        dateFormat="yyyy-MM-dd"
+                        isClearable
+                    />
+                </FormControl>
+            ))}
+        </Box>
+    );
+};
+
 const SnippetViewer = ({ snippet, onBack, settings }) => {
   const [placeholders, setPlaceholders] = useState({});
+  const [viewerDateValues, setViewerDateValues] = useState({});
   const [output, setOutput] = useState('');
   const [hasCopied, setHasCopied] = useState(false);
   const [startingSnippets, setStartingSnippets] = useState([]);
@@ -55,13 +98,21 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
     });
 
     setPlaceholders(initialPlaceholders);
+    setViewerDateValues({}); // Also reset date values
     setPrefix(''); // Reset prefix when snippet changes
   }, [snippet]);
 
-  // Update the final output when prefix or placeholders change
+  const handleDateChange = (variableName, date) => {
+    setViewerDateValues(prev => ({
+      ...prev,
+      [variableName]: date ? date.toISOString() : null,
+    }));
+  };
+
+  // Update the final output when prefix, placeholders, or dates change
   useEffect(() => {
     // 1. Evaluate our new dynamic date placeholders first
-    const evaluatedContent = evaluatePlaceholders(snippet.content, snippet.dateValues);
+    const evaluatedContent = evaluatePlaceholders(snippet.content, viewerDateValues);
 
     // 2. The existing logic for simple text placeholders then runs on the result
     let snippetWithPlaceholders = evaluatedContent || '';
@@ -70,7 +121,7 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
       snippetWithPlaceholders = snippetWithPlaceholders.replace(replacementRegex, placeholders[key]);
     }
     setOutput(prefix + snippetWithPlaceholders);
-  }, [prefix, placeholders, snippet]);
+  }, [prefix, placeholders, snippet, viewerDateValues]);
 
   const handleCopy = () => {
     const tempDiv = document.createElement('div');
@@ -139,6 +190,12 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
                 ))}
             </Select>
           </FormControl>
+
+          <DateManager
+            content={snippet.content || ''}
+            dateValues={viewerDateValues}
+            onDateChange={handleDateChange}
+          />
 
           {Object.keys(placeholders).length > 0 && (
             <Box mt={4}>

@@ -22,50 +22,9 @@ import 'react-datepicker/dist/react-datepicker.css';
 import 'react-quill/dist/quill.snow.css';
 import './quill.css';
 
-// A new sub-component to manage the date variables UI
-const DateManager = ({ quillRef, dateValues, onDateChange }) => {
-    // This component might render before the ref is attached, so we check for its existence.
-    if (!quillRef.current) {
-        return null;
-    }
-
-    const editor = quillRef.current.getEditor();
-    const text = editor.getText();
-    const datePlaceholderRegex = /{{(date_\d+)}}/g;
-    const found = text.matchAll(datePlaceholderRegex);
-    const uniqueDateVars = [...new Set(Array.from(found, match => match[1]))];
-
-    if (uniqueDateVars.length === 0) {
-        return null;
-    }
-
-    return (
-        <VStack spacing={4} align="stretch" mt={4}>
-            <Heading size="sm">Date Variables</Heading>
-            {uniqueDateVars.map(varName => (
-                <FormControl key={varName}>
-                    <Flex align="center" justify="space-between">
-                        <FormLabel htmlFor={varName} mb="0">{varName}</FormLabel>
-                        <DatePicker
-                            id={varName}
-                            selected={dateValues[varName] ? new Date(dateValues[varName]) : null}
-                            onChange={date => onDateChange(varName, date)}
-                            customInput={<Input w="150px" />}
-                            dateFormat="yyyy-MM-dd"
-                            isClearable
-                        />
-                    </Flex>
-                </FormControl>
-            ))}
-        </VStack>
-    );
-};
-
-
 const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
   const [name, setName] = useState('');
   const [content, setContent] = useState('');
-  const [dateValues, setDateValues] = useState({});
   const quillRef = useRef(null);
 
   useEffect(() => {
@@ -73,17 +32,15 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
       if (snippet) {
         setName(snippet.name);
         setContent(snippet.content);
-        setDateValues(snippet.dateValues || {});
       } else {
         setName('');
         setContent('');
-        setDateValues({});
       }
     }
   }, [snippet, isOpen]);
 
   const handleSave = () => {
-    onSave({ ...snippet, name, content, dateValues });
+    onSave({ ...snippet, name, content });
     onClose();
   };
 
@@ -115,13 +72,6 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
     editor.insertText(range.index, variableName);
   };
 
-  const handleDateChange = (variableName, date) => {
-    setDateValues(prev => ({
-      ...prev,
-      [variableName]: date ? date.toISOString() : null,
-    }));
-  };
-
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="xl">
       <ModalOverlay />
@@ -144,11 +94,6 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
                 </Flex>
                 <ReactQuill ref={quillRef} theme="snow" value={content} onChange={setContent} style={{marginTop: '8px'}}/>
             </FormControl>
-            <DateManager
-                quillRef={quillRef}
-                dateValues={dateValues}
-                onDateChange={handleDateChange}
-            />
           </VStack>
         </ModalBody>
         <ModalFooter>

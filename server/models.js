@@ -10,8 +10,7 @@ const snippetSchema = new mongoose.Schema({
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
     name: { type: String, required: true },
     content: String,
-    useCount: { type: Number, default: 0 },
-    dateValues: { type: mongoose.Schema.Types.Mixed, default: {} }
+    useCount: { type: Number, default: 0 }
 });
 
 const settingsSchema = new mongoose.Schema({
