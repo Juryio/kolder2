@@ -14,6 +14,7 @@ import {
   VStack,
   Flex,
   HStack,
+  Heading,
 } from '@chakra-ui/react';
 import ReactQuill from 'react-quill';
 import DatePicker from 'react-datepicker';
@@ -22,9 +23,16 @@ import 'react-quill/dist/quill.snow.css';
 import './quill.css';
 
 // A new sub-component to manage the date variables UI
-const DateManager = ({ content, dateValues, onDateChange }) => {
+const DateManager = ({ quillRef, dateValues, onDateChange }) => {
+    // This component might render before the ref is attached, so we check for its existence.
+    if (!quillRef.current) {
+        return null;
+    }
+
+    const editor = quillRef.current.getEditor();
+    const text = editor.getText();
     const datePlaceholderRegex = /{{(date_\d+)}}/g;
-    const found = content.matchAll(datePlaceholderRegex);
+    const found = text.matchAll(datePlaceholderRegex);
     const uniqueDateVars = [...new Set(Array.from(found, match => match[1]))];
 
     if (uniqueDateVars.length === 0) {
@@ -137,7 +145,7 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
                 <ReactQuill ref={quillRef} theme="snow" value={content} onChange={setContent} style={{marginTop: '8px'}}/>
             </FormControl>
             <DateManager
-                content={content}
+                quillRef={quillRef}
                 dateValues={dateValues}
                 onDateChange={handleDateChange}
             />
