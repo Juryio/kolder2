@@ -73,8 +73,36 @@ app.post('/api/categories', async (req, res) => {
 
 app.put('/api/categories/:id', async (req, res) => {
     try {
-        const { name } = req.body;
-        const updatedCategory = await Category.findByIdAndUpdate(req.params.id, { name }, { new: true });
+        const { name, parentId } = req.body;
+        const categoryToUpdate = await Category.findById(req.params.id);
+
+        if (!categoryToUpdate) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
+
+        // Build the update object
+        const update = {};
+        if (name) update.name = name;
+        // The parentId can be null (for root categories)
+        if (parentId !== undefined) {
+             // Circular dependency check
+            let currentParentId = parentId;
+            while(currentParentId) {
+                if (currentParentId.toString() === categoryToUpdate._id.toString()) {
+                    return res.status(400).json({ error: 'Cannot move a category into its own descendant.' });
+                }
+                const parent = await Category.findById(currentParentId);
+                currentParentId = parent ? parent.parentId : null;
+            }
+            update.parentId = parentId;
+        }
+
+        const updatedCategory = await Category.findByIdAndUpdate(
+            req.params.id,
+            update,
+            { new: true }
+        );
+
         res.json(updatedCategory);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
