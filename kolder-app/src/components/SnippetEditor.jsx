@@ -54,21 +54,15 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
   };
 
   const handleInsertDatePlaceholder = () => {
+    const name = prompt('Enter a name for the date variable (e.g., invoice_date):');
+    if (!name || name.trim() === '') {
+        return; // User cancelled or entered empty name
+    }
+    const sanitizedName = name.trim().replace(/\s+/g, '_'); // Replace spaces with underscores
+
     const editor = quillRef.current.getEditor();
     const range = editor.getSelection(true);
-
-    // Get the current content directly from the editor to avoid stale state
-    const currentContent = editor.getText();
-    const existingDates = currentContent.match(/{{date_(\d+)}}/g) || [];
-    let nextId = 1;
-    if (existingDates.length > 0) {
-      const highestId = existingDates
-        .map(p => parseInt(p.match(/(\d+)/)[0], 10))
-        .reduce((max, id) => Math.max(max, id), 0);
-      nextId = highestId + 1;
-    }
-
-    const variableName = `{{date_${nextId}}}`;
+    const variableName = `{{date:${sanitizedName}}}`;
     editor.insertText(range.index, variableName);
   };
 

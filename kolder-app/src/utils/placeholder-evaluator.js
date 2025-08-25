@@ -2,8 +2,8 @@ import { add, sub, format } from 'date-fns';
 
 const placeholderRegex = /{{\s*([^}]+)\s*}}/g;
 // Regex to parse: variable, operator, amount, unit
-// e.g., "date_1 + 10 d"
-const expressionRegex = /^(\w+)(?:\s*([+-])\s*(\d+)\s*([dwmy]))?$/;
+// e.g., "date:invoice_date + 10 d"
+const expressionRegex = /^date:(\w+)(?:\s*([+-])\s*(\d+)\s*([dwmy]))?$/;
 
 export const evaluatePlaceholders = (text, dateValues) => {
   if (!text || !dateValues) {
@@ -46,8 +46,8 @@ export const evaluatePlaceholders = (text, dateValues) => {
         }
       }
 
-      // Using format for consistent output, e.g., "2025-08-26"
-      return format(baseDate, 'yyyy-MM-dd');
+      // Using format for consistent output, e.g., "25.08.2025"
+      return format(baseDate, 'dd.MM.yyyy');
 
     } catch (error) {
       console.error("Error evaluating placeholder:", error);
