@@ -14,11 +14,6 @@ import {
   VStack,
   Flex,
   HStack,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  PopoverBody,
-  Box,
 } from '@chakra-ui/react';
 import ReactQuill from 'react-quill';
 import DatePicker from 'react-datepicker';
@@ -26,35 +21,43 @@ import 'react-datepicker/dist/react-datepicker.css';
 import 'react-quill/dist/quill.snow.css';
 import './quill.css';
 
-const Quill = ReactQuill.Quill;
-const Inline = Quill.import('blots/inline');
+// A new sub-component to manage the date variables UI
+const DateManager = ({ content, dateValues, onDateChange }) => {
+    const datePlaceholderRegex = /{{(date_\d+)}}/g;
+    const found = content.matchAll(datePlaceholderRegex);
+    const uniqueDateVars = [...new Set(Array.from(found, match => match[1]))];
 
-class DatePlaceholderBlot extends Inline {
-  static blotName = 'date-placeholder';
-  static className = 'date-placeholder';
-  static tagName = 'span';
+    if (uniqueDateVars.length === 0) {
+        return null;
+    }
 
-  static create(value) {
-    const node = super.create();
-    // Sanitize value to prevent XSS
-    node.setAttribute('data-variable', value);
-    node.innerText = `{{${value}}}`;
-    return node;
-  }
-
-  static formats(node) {
-    return node.getAttribute('data-variable');
-  }
-}
-
-Quill.register(DatePlaceholderBlot);
+    return (
+        <VStack spacing={4} align="stretch" mt={4}>
+            <Heading size="sm">Date Variables</Heading>
+            {uniqueDateVars.map(varName => (
+                <FormControl key={varName}>
+                    <Flex align="center" justify="space-between">
+                        <FormLabel htmlFor={varName} mb="0">{varName}</FormLabel>
+                        <DatePicker
+                            id={varName}
+                            selected={dateValues[varName] ? new Date(dateValues[varName]) : null}
+                            onChange={date => onDateChange(varName, date)}
+                            customInput={<Input w="150px" />}
+                            dateFormat="yyyy-MM-dd"
+                            isClearable
+                        />
+                    </Flex>
+                </FormControl>
+            ))}
+        </VStack>
+    );
+};
 
 
 const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
   const [name, setName] = useState('');
   const [content, setContent] = useState('');
   const [dateValues, setDateValues] = useState({});
-  const [editingDate, setEditingDate] = useState(null); // { variable: string, target: DOMNode }
   const quillRef = useRef(null);
 
   useEffect(() => {
@@ -71,57 +74,6 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
     }
   }, [snippet, isOpen]);
 
-  useEffect(() => {
-    if (!isOpen || !quillRef.current) return;
-
-    // Use a small timeout to ensure Quill has rendered the initial content
-    const timeoutId = setTimeout(() => {
-      const editor = quillRef.current.getEditor();
-      const editorRoot = editor.root;
-
-      if (!editorRoot) return;
-
-      const handleClick = (e) => {
-        const target = e.target;
-        if (target && target.classList.contains('date-placeholder')) {
-          e.preventDefault();
-          e.stopPropagation();
-          const variable = target.getAttribute('data-variable');
-          setEditingDate({ variable, target });
-        }
-      };
-
-      editorRoot.addEventListener('click', handleClick);
-
-      // Cleanup function for when the component unmounts or isOpen changes
-      const cleanup = () => {
-        editorRoot.removeEventListener('click', handleClick);
-      };
-
-      // We need a way to return this cleanup function from the effect
-      // A bit of a hack: store it on the ref
-      quillRef.current.cleanupClickListener = cleanup;
-
-    }, 100); // 100ms should be plenty of time
-
-    return () => {
-      clearTimeout(timeoutId);
-      // Call the cleanup function if it was stored
-      if (quillRef.current && quillRef.current.cleanupClickListener) {
-        quillRef.current.cleanupClickListener();
-        quillRef.current.cleanupClickListener = null;
-      }
-    };
-  }, [isOpen]);
-
-  const handleDateChange = (date) => {
-    setDateValues((prev) => ({
-      ...prev,
-      [editingDate.variable]: date.toISOString(),
-    }));
-    setEditingDate(null);
-  };
-
   const handleSave = () => {
     onSave({ ...snippet, name, content, dateValues });
     onClose();
@@ -131,8 +83,7 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
       const placeholderName = prompt('Enter placeholder name (e.g., customer_name):');
       if (placeholderName && placeholderName.trim() !== '') {
           const editor = quillRef.current.getEditor();
-          const range = editor.getSelection(true); // true for focus
-          // Using double braces as the primary format
+          const range = editor.getSelection(true);
           editor.insertText(range.index, `{{${placeholderName.trim()}}}`);
       }
   };
@@ -141,18 +92,26 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
     const editor = quillRef.current.getEditor();
     const range = editor.getSelection(true);
 
-    const existingDates = content.match(/{{date_(\d+)}}/g) || [];
+    // Get the current content directly from the editor to avoid stale state
+    const currentContent = editor.getText();
+    const existingDates = currentContent.match(/{{date_(\d+)}}/g) || [];
     let nextId = 1;
     if (existingDates.length > 0) {
       const highestId = existingDates
-        .map(p => parseInt(p.match(/\d+/)[0], 10))
+        .map(p => parseInt(p.match(/(\d+)/)[0], 10))
         .reduce((max, id) => Math.max(max, id), 0);
       nextId = highestId + 1;
     }
 
-    const variableName = `date_${nextId}`;
-    editor.insertEmbed(range.index, 'date-placeholder', variableName, 'user');
-    editor.setSelection(range.index + 1, Quill.sources.SILENT);
+    const variableName = `{{date_${nextId}}}`;
+    editor.insertText(range.index, variableName);
+  };
+
+  const handleDateChange = (variableName, date) => {
+    setDateValues(prev => ({
+      ...prev,
+      [variableName]: date ? date.toISOString() : null,
+    }));
   };
 
   return (
@@ -177,6 +136,11 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
                 </Flex>
                 <ReactQuill ref={quillRef} theme="snow" value={content} onChange={setContent} style={{marginTop: '8px'}}/>
             </FormControl>
+            <DateManager
+                content={content}
+                dateValues={dateValues}
+                onDateChange={handleDateChange}
+            />
           </VStack>
         </ModalBody>
         <ModalFooter>
@@ -193,30 +157,6 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
         </ModalFooter>
       </ModalContent>
-        <Popover
-            isOpen={!!editingDate}
-            onClose={() => setEditingDate(null)}
-            placement="bottom-start"
-            closeOnBlur={true}
-            isLazy
-        >
-            <PopoverTrigger>
-                <Box
-                    position="absolute"
-                    top={editingDate ? `${editingDate.target.offsetTop + editingDate.target.offsetHeight}px` : 0}
-                    left={editingDate ? `${editingDate.target.offsetLeft}px` : 0}
-                />
-            </PopoverTrigger>
-            <PopoverContent zIndex={9999} w="auto">
-                <PopoverBody p={0}>
-                    <DatePicker
-                        selected={editingDate && dateValues[editingDate.variable] ? new Date(dateValues[editingDate.variable]) : null}
-                        onChange={handleDateChange}
-                        inline
-                    />
-                </PopoverBody>
-            </PopoverContent>
-        </Popover>
     </Modal>
   );
 };
