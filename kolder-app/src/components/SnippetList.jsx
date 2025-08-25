@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -29,6 +29,12 @@ const getCategoryPath = (id, categories, path = []) => {
 const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, onEdit, onDelete, onSelectSnippet, settings }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [editingSnippet, setEditingSnippet] = useState(null);
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
+
+  useEffect(() => {
+    // Sync local state if the external searchTerm changes (e.g., cleared)
+    setLocalSearchTerm(searchTerm);
+  }, [searchTerm]);
 
   const handleNew = () => {
     setEditingSnippet(null);
@@ -47,6 +53,11 @@ const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, 
       onAdd(snippet);
     }
   };
+
+  const handleSearchInputChange = (e) => {
+    setLocalSearchTerm(e.target.value);
+    onSearchChange(e.target.value);
+  }
 
   const isSearching = searchTerm !== '';
 
@@ -70,8 +81,8 @@ const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, 
       </Flex>
       <Input
         placeholder="Search all snippets..."
-        value={searchTerm}
-        onChange={(e) => onSearchChange(e.target.value)}
+        value={localSearchTerm}
+        onChange={handleSearchInputChange}
         mb={4}
       />
       {snippets.length === 0 ? (

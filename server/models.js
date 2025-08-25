@@ -11,6 +11,7 @@ const snippetSchema = new mongoose.Schema({
     name: { type: String, required: true },
     content: String,
     useCount: { type: Number, default: 0 },
+    dateValues: { type: mongoose.Schema.Types.Mixed, default: {} }
 });
 
 const settingsSchema = new mongoose.Schema({
