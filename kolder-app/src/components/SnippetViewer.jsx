@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { evaluatePlaceholders } from '../utils/placeholder-evaluator';
 import {
   Box,
   Button,
@@ -35,16 +36,15 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
   // Set placeholders when snippet changes
   useEffect(() => {
     if (!snippet.content) return;
-    // Regex to find {{...}} or {...}
-    const placeholderRegex = /{{(.*?)}}|\{(.*?)\}/g;
+
+    // This regex now finds simple {{placeholders}} but ignores the {{date_...}} ones
+    const placeholderRegex = /{{\s*(?!date_)([^}]+)\s*}}/g;
     const foundPlaceholders = [...snippet.content.matchAll(placeholderRegex)];
     const initialPlaceholders = {};
 
-    // Use a Set to store unique placeholder names
     const placeholderNames = new Set();
     foundPlaceholders.forEach(match => {
-        // The name is in either capture group 1 or 2
-        const name = match[1] || match[2];
+        const name = match[1];
         if (name) {
             placeholderNames.add(name.trim());
         }
@@ -60,10 +60,13 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
 
   // Update the final output when prefix or placeholders change
   useEffect(() => {
-    let snippetWithPlaceholders = snippet.content || '';
+    // 1. Evaluate our new dynamic date placeholders first
+    const evaluatedContent = evaluatePlaceholders(snippet.content, snippet.dateValues);
+
+    // 2. The existing logic for simple text placeholders then runs on the result
+    let snippetWithPlaceholders = evaluatedContent || '';
     for (const key in placeholders) {
-      // Create a regex that matches both {{key}} and {key}
-      const replacementRegex = new RegExp(`{{${key}}}|{${key}}`, 'g');
+      const replacementRegex = new RegExp(`{{${key}}}`, 'g');
       snippetWithPlaceholders = snippetWithPlaceholders.replace(replacementRegex, placeholders[key]);
     }
     setOutput(prefix + snippetWithPlaceholders);
