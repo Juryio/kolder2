@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { useDrag, useDrop } from 'react-dnd';
 import {
   Box,
   Button,
@@ -10,11 +11,35 @@ import {
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon, EditIcon, ChevronDownIcon, ChevronRightIcon } from '@chakra-ui/icons';
 
-const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory, settings, openCategories, onToggleCategory }) => {
+const ItemTypes = {
+  CATEGORY: 'category',
+};
+
+const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory, settings, openCategories, onToggleCategory, onMove }) => {
+  const ref = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(category.name);
 
   const isOpen = !!openCategories[category._id];
+
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: ItemTypes.CATEGORY,
+    item: { id: category._id },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }));
+
+  const [, drop] = useDrop(() => ({
+    accept: ItemTypes.CATEGORY,
+    drop: (item) => {
+      if (item.id !== category._id) {
+        onMove(item.id, category._id);
+      }
+    },
+  }));
+
+  drag(drop(ref));
 
   const handleUpdate = () => {
     if(newName.trim() === '') {
@@ -33,7 +58,7 @@ const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, sel
   const isSelected = selectedCategory === category._id;
 
   return (
-    <Box pl="4" mt="2">
+    <Box pl="4" mt="2" ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }}>
       <Flex align="center">
         <IconButton
           size="xs"
@@ -80,7 +105,7 @@ const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, sel
       </Flex>
       <Collapse in={isOpen}>
         {category.children.map((child) => (
-          <CategoryItem
+          <DraggableCategory
             key={child._id}
             category={child}
             onAdd={onAdd}
@@ -91,6 +116,7 @@ const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, sel
             settings={settings}
             openCategories={openCategories}
             onToggleCategory={onToggleCategory}
+            onMove={onMove}
           />
         ))}
       </Collapse>
@@ -98,7 +124,33 @@ const CategoryItem = ({ category, onAdd, onEdit, onDelete, onSelectCategory, sel
   );
 };
 
-const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory, settings, openCategories, onToggleCategory }) => {
+const RootDropZone = ({ onMove }) => {
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: ItemTypes.CATEGORY,
+    drop: (item) => onMove(item.id, null),
+    collect: (monitor) => ({
+      isOver: !!monitor.isOver(),
+    }),
+  }));
+
+  return (
+    <Box
+      ref={drop}
+      p={2}
+      mt={2}
+      mb={4}
+      textAlign="center"
+      border="2px dashed"
+      borderColor={isOver ? 'green.500' : 'gray.500'}
+      borderRadius="md"
+      bg={isOver ? 'green.100' : 'transparent'}
+    >
+      Drop here to make a top-level category
+    </Box>
+  );
+};
+
+const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory, settings, openCategories, onToggleCategory, onMove }) => {
   return (
     <Box>
       <Flex align="center" mb="4">
@@ -115,8 +167,9 @@ const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, s
           Add Category
         </Button>
       </Flex>
+      <RootDropZone onMove={onMove} />
       {categories.map((category) => (
-        <CategoryItem
+        <DraggableCategory
           key={category._id}
           category={category}
           onAdd={onAdd}
@@ -127,6 +180,7 @@ const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, s
           settings={settings}
           openCategories={openCategories}
           onToggleCategory={onToggleCategory}
+          onMove={onMove}
         />
       ))}
     </Box>

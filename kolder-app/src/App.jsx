@@ -12,6 +12,8 @@ import {
   Image,
 } from '@chakra-ui/react';
 import { SettingsIcon, ViewIcon, AddIcon } from '@chakra-ui/icons';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import CategoryTree from './components/CategoryTree';
 import SnippetList from './components/SnippetList';
 import SnippetViewer from './components/SnippetViewer';
@@ -44,6 +46,7 @@ const MainView = ({
     onEditSnippet,
     onDeleteSnippet,
     onSelectSnippet,
+    onMoveCategory,
 }) => (
     <Flex flex="1">
         <Box as="aside" w="300px" p="4" borderRightWidth="1px" bg={settings?.theme.contentBackgroundColor} borderColor={settings?.theme.contentBackgroundColor} overflowX="auto">
@@ -57,6 +60,7 @@ const MainView = ({
                 selectedCategory={selectedCategory}
                 openCategories={openCategories}
                 onToggleCategory={onToggleCategory}
+                onMove={onMoveCategory}
             />
         </Box>
         <Box as="main" flex="1" p="4">
@@ -182,6 +186,15 @@ function App() {
     }
   };
 
+  const handleMoveCategory = async (draggedId, targetId) => {
+    try {
+        await api.put(`/categories/${draggedId}`, { parentId: targetId });
+        await fetchAllData();
+    } catch (error) {
+        console.error('Error moving category:', error);
+    }
+  };
+
   const handleSelectCategory = (id) => {
     setSelectedCategory(id);
     setSearchTerm('');
@@ -258,6 +271,7 @@ function App() {
                   onEditSnippet={handleEditSnippet}
                   onDeleteSnippet={handleDeleteSnippet}
                   onSelectSnippet={handleSelectSnippet}
+                  onMoveCategory={handleMoveCategory}
               />;
       }
   }
@@ -271,9 +285,10 @@ function App() {
   }
 
   return (
-    <Flex direction="column" minH="100vh" w="100%" bg={settings?.theme.backgroundColor} color={settings?.theme.textColor}>
-      <Flex as="header" p="4" borderBottomWidth="1px" alignItems="center" borderColor={settings?.theme.contentBackgroundColor}>
-        {settings?.icon && <Image src={settings.icon} alt="App Icon" boxSize="32px" mr={3} />}
+    <DndProvider backend={HTML5Backend}>
+      <Flex direction="column" minH="100vh" w="100%" bg={settings?.theme.backgroundColor} color={settings?.theme.textColor}>
+        <Flex as="header" p="4" borderBottomWidth="1px" alignItems="center" borderColor={settings?.theme.contentBackgroundColor}>
+          {settings?.icon && <Image src={settings.icon} alt="App Icon" boxSize="32px" mr={3} />}
         <Heading size="md">{settings?.title || 'Kolder'}</Heading>
         <Spacer />
         <IconButton
@@ -317,6 +332,7 @@ function App() {
         settings={settings}
       />
     </Flex>
+    </DndProvider>
   );
 }
 
