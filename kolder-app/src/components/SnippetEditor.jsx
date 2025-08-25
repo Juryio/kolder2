@@ -74,23 +74,43 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
   useEffect(() => {
     if (!isOpen || !quillRef.current) return;
 
-    const quill = quillRef.current.getEditor();
-    const editorRoot = quill.root;
+    // Use a small timeout to ensure Quill has rendered the initial content
+    const timeoutId = setTimeout(() => {
+      const editor = quillRef.current.getEditor();
+      const editorRoot = editor.root;
 
-    const handleClick = (e) => {
-      const target = e.target;
-      if (target && target.classList.contains('date-placeholder')) {
-        e.preventDefault();
-        e.stopPropagation();
-        const variable = target.getAttribute('data-variable');
-        setEditingDate({ variable, target });
-      }
-    };
+      if (!editorRoot) return;
 
-    editorRoot.addEventListener('click', handleClick);
+      const handleClick = (e) => {
+        const target = e.target;
+        if (target && target.classList.contains('date-placeholder')) {
+          e.preventDefault();
+          e.stopPropagation();
+          const variable = target.getAttribute('data-variable');
+          setEditingDate({ variable, target });
+        }
+      };
+
+      editorRoot.addEventListener('click', handleClick);
+
+      // Cleanup function for when the component unmounts or isOpen changes
+      const cleanup = () => {
+        editorRoot.removeEventListener('click', handleClick);
+      };
+
+      // We need a way to return this cleanup function from the effect
+      // A bit of a hack: store it on the ref
+      quillRef.current.cleanupClickListener = cleanup;
+
+    }, 100); // 100ms should be plenty of time
 
     return () => {
-      editorRoot.removeEventListener('click', handleClick);
+      clearTimeout(timeoutId);
+      // Call the cleanup function if it was stored
+      if (quillRef.current && quillRef.current.cleanupClickListener) {
+        quillRef.current.cleanupClickListener();
+        quillRef.current.cleanupClickListener = null;
+      }
     };
   }, [isOpen]);
 
