@@ -10,12 +10,9 @@ import {
   Collapse,
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon, EditIcon, ChevronDownIcon, ChevronRightIcon } from '@chakra-ui/icons';
+import { ItemTypes } from '../utils/dnd-types';
 
-const ItemTypes = {
-  CATEGORY: 'category',
-};
-
-const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory, settings, openCategories, onToggleCategory, onMove }) => {
+const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory, settings, openCategories, onToggleCategory, onMove, onMoveSnippet }) => {
   const ref = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(category.name);
@@ -30,13 +27,20 @@ const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory
     }),
   }));
 
-  const [, drop] = useDrop(() => ({
-    accept: ItemTypes.CATEGORY,
-    drop: (item) => {
-      if (item.id !== category._id) {
+  const [{ isOver, canDrop }, drop] = useDrop(() => ({
+    accept: [ItemTypes.CATEGORY, ItemTypes.SNIPPET],
+    drop: (item, monitor) => {
+      const itemType = monitor.getItemType();
+      if (itemType === ItemTypes.CATEGORY && item.id !== category._id) {
         onMove(item.id, category._id);
+      } else if (itemType === ItemTypes.SNIPPET) {
+        onMoveSnippet(item.id, category._id);
       }
     },
+    collect: monitor => ({
+        isOver: !!monitor.isOver(),
+        canDrop: !!monitor.canDrop(),
+    })
   }));
 
   drag(drop(ref));
@@ -59,7 +63,7 @@ const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory
 
   return (
     <Box pl="4" mt="2" ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }}>
-      <Flex align="center">
+      <Flex align="center" bg={isOver && canDrop ? 'green.100' : 'transparent'} borderRadius="md">
         <IconButton
           size="xs"
           mr="2"
@@ -117,6 +121,7 @@ const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory
             openCategories={openCategories}
             onToggleCategory={onToggleCategory}
             onMove={onMove}
+            onMoveSnippet={onMoveSnippet}
           />
         ))}
       </Collapse>
@@ -150,7 +155,7 @@ const RootDropZone = ({ onMove }) => {
   );
 };
 
-const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory, settings, openCategories, onToggleCategory, onMove }) => {
+const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory, settings, openCategories, onToggleCategory, onMove, onMoveSnippet }) => {
   return (
     <Box>
       <Flex align="center" mb="4">
@@ -181,6 +186,7 @@ const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, s
           openCategories={openCategories}
           onToggleCategory={onToggleCategory}
           onMove={onMove}
+          onMoveSnippet={onMoveSnippet}
         />
       ))}
     </Box>
