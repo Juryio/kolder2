@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
+import { useDrag } from 'react-dnd';
+import { ItemTypes } from '../utils/dnd-types';
 import {
   Box,
   Button,
@@ -25,6 +27,48 @@ const getCategoryPath = (id, categories, path = []) => {
     }
     return null;
 };
+
+const DraggableSnippetItem = ({ snippet, categories, onSelectSnippet, onEdit, onDelete, settings, isSearching }) => {
+    const ref = useRef(null);
+    const [{ isDragging }, drag] = useDrag(() => ({
+        type: ItemTypes.SNIPPET,
+        item: { id: snippet._id },
+        collect: (monitor) => ({
+            isDragging: !!monitor.isDragging(),
+        }),
+    }));
+
+    drag(ref);
+
+    return (
+        <Flex
+            ref={ref}
+            key={snippet._id}
+            align="center"
+            justify="space-between"
+            p={3}
+            bg={settings?.theme.contentBackgroundColor}
+            borderWidth="1px"
+            borderColor={settings?.theme.accentColor}
+            borderRadius="md"
+            mt={2}
+            style={{ opacity: isDragging ? 0.5 : 1, cursor: 'move' }}
+        >
+            <Box>
+                <Text fontWeight="bold" cursor="pointer" onClick={() => onSelectSnippet(snippet)}>{snippet.name}</Text>
+                {isSearching && (
+                    <Text fontSize="xs" color="gray.500">
+                        in: {getCategoryPath(snippet.categoryId, categories)}
+                    </Text>
+                )}
+            </Box>
+            <Box>
+                <IconButton size="sm" icon={<EditIcon />} mr="2" onClick={() => onEdit(snippet)} />
+                <IconButton size="sm" icon={<DeleteIcon />} onClick={() => onDelete(snippet._id)} />
+            </Box>
+        </Flex>
+    );
+}
 
 const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, onEdit, onDelete, onSelectSnippet, settings }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -83,20 +127,16 @@ const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, 
         </Text>
       ) : (
         snippets.map((snippet) => (
-          <Flex key={snippet._id} align="center" justify="space-between" p={3} bg={settings?.theme.contentBackgroundColor} borderWidth="1px" borderColor={settings?.theme.accentColor} borderRadius="md" mt={2}>
-            <Box>
-                <Text fontWeight="bold" cursor="pointer" onClick={() => onSelectSnippet(snippet)}>{snippet.name}</Text>
-                {isSearching && (
-                    <Text fontSize="xs" color="gray.500">
-                        in: {getCategoryPath(snippet.categoryId, categories)}
-                    </Text>
-                )}
-            </Box>
-            <Box>
-              <IconButton size="sm" icon={<EditIcon />} mr="2" onClick={() => handleEdit(snippet)} />
-              <IconButton size="sm" icon={<DeleteIcon />} onClick={() => onDelete(snippet._id)} />
-            </Box>
-          </Flex>
+          <DraggableSnippetItem
+            key={snippet._id}
+            snippet={snippet}
+            categories={categories}
+            onSelectSnippet={onSelectSnippet}
+            onEdit={handleEdit}
+            onDelete={onDelete}
+            settings={settings}
+            isSearching={isSearching}
+          />
         ))
       )}
       <SnippetEditor

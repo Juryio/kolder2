@@ -47,6 +47,7 @@ const MainView = ({
     onDeleteSnippet,
     onSelectSnippet,
     onMoveCategory,
+    onMoveSnippet,
 }) => (
     <Flex flex="1">
         <Box as="aside" w="300px" p="4" borderRightWidth="1px" bg={settings?.theme.contentBackgroundColor} borderColor={settings?.theme.contentBackgroundColor} overflowX="auto">
@@ -61,6 +62,7 @@ const MainView = ({
                 openCategories={openCategories}
                 onToggleCategory={onToggleCategory}
                 onMove={onMoveCategory}
+                onMoveSnippet={onMoveSnippet}
             />
         </Box>
         <Box as="main" flex="1" p="4">
@@ -195,6 +197,15 @@ function App() {
     }
   };
 
+  const handleMoveSnippet = async (snippetId, categoryId) => {
+    try {
+        await api.put(`/snippets/${snippetId}`, { categoryId: categoryId });
+        await fetchAllData();
+    } catch (error) {
+        console.error('Error moving snippet:', error);
+    }
+  };
+
   const handleSelectCategory = (id) => {
     setSelectedCategory(id);
     setSearchTerm('');
@@ -272,6 +283,7 @@ function App() {
                   onDeleteSnippet={handleDeleteSnippet}
                   onSelectSnippet={handleSelectSnippet}
                   onMoveCategory={handleMoveCategory}
+                  onMoveSnippet={handleMoveSnippet}
               />;
       }
   }
