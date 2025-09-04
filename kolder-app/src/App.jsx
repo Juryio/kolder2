@@ -14,11 +14,13 @@ import {
 import { SettingsIcon, ViewIcon, AddIcon } from '@chakra-ui/icons';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import debounce from 'lodash.debounce';
 import GridLayout from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import CategoryTreeWidget from './components/widgets/CategoryTreeWidget';
 import SnippetListWidget from './components/widgets/SnippetListWidget';
+import CalendarWidget from './components/widgets/CalendarWidget';
 import SnippetViewer from './components/SnippetViewer';
 import AddCategoryModal from './components/AddCategoryModal';
 import SettingsModal from './components/SettingsModal';
@@ -51,14 +53,25 @@ const MainView = ({
     onSelectSnippet,
     onMoveCategory,
     onMoveSnippet,
+    onLayoutChange,
 }) => {
-    const layout = [
-        { i: 'categories', x: 0, y: 0, w: 3, h: 10 },
-        { i: 'snippets', x: 3, y: 0, w: 9, h: 10 },
+    const defaultLayout = [
+        { i: 'categories', x: 0, y: 0, w: 3, h: 8, minW: 2, maxW: 6 },
+        { i: 'snippets', x: 3, y: 0, w: 6, h: 12, minW: 3 },
+        { i: 'calendar', x: 9, y: 0, w: 3, h: 8, minW: 2, maxW: 4 },
     ];
 
+    const layout = settings.dashboardLayout || defaultLayout;
+
     return (
-        <GridLayout className="layout" layout={layout} cols={12} rowHeight={30} width={1200}>
+        <GridLayout
+            className="layout"
+            layout={layout}
+            onLayoutChange={onLayoutChange}
+            cols={12}
+            rowHeight={30}
+            width={1200}
+        >
             <div key="categories">
                 <CategoryTreeWidget
                     settings={settings}
@@ -90,6 +103,9 @@ const MainView = ({
                         settings={settings}
                     />
                 )}
+            </div>
+            <div key="calendar">
+                <CalendarWidget />
             </div>
         </GridLayout>
     );
@@ -169,6 +185,18 @@ function App() {
     } catch (error) {
       console.error('Error saving settings:', error);
     }
+  };
+
+  const debouncedSaveLayout = useRef(
+    debounce((newLayout) => {
+        handleSaveSettings({ dashboardLayout: newLayout });
+    }, 1000)
+  ).current;
+
+  const handleLayoutChange = (layout) => {
+    // This function is called frequently during drag/resize.
+    // We debounce the actual save operation.
+    debouncedSaveLayout(layout);
   };
 
   const handleAddCategory = async (name) => {
@@ -294,6 +322,7 @@ function App() {
                   onSelectSnippet={handleSelectSnippet}
                   onMoveCategory={handleMoveCategory}
                   onMoveSnippet={handleMoveSnippet}
+                  onLayoutChange={handleLayoutChange}
               />;
       }
   }
