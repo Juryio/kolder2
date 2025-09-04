@@ -18,14 +18,13 @@ import {
 import { ArrowBackIcon } from '@chakra-ui/icons';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
+import { parsePlaceholders } from '../utils/placeholder-parser';
 import 'react-datepicker/dist/react-datepicker.css';
 import './quill.css'; // For consistent styling if needed
 
 const api = axios.create({
     baseURL: '/api',
 });
-
-import { parsePlaceholders } from '../utils/placeholder-parser';
 
 // A new sub-component to manage the date variables UI in the viewer
 const DateManager = ({ dateVars, dateValues, onDateChange }) => {
