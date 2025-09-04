@@ -195,7 +195,6 @@ app.post('/api/analytics/reset', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-
 // --- API Endpoints for Starting Snippets ---
 app.get('/api/starting-snippets', async (req, res) => {
     try {
@@ -217,6 +216,24 @@ app.delete('/api/starting-snippets/:id', async (req, res) => {
         await StartingSnippet.findByIdAndDelete(req.params.id);
         res.status(204).send();
     } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/testing/clear-db', async (req, res) => {
+    try {
+        await Category.deleteMany({});
+        await Snippet.deleteMany({});
+        await Settings.deleteMany({});
+        await StartingSnippet.deleteMany({});
+        // Seed initial settings data if none exists
+        Settings.findOne().then(settings => {
+            if (!settings) {
+                new Settings().save().then(() => console.log('Default settings created.'));
+            }
+        });
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 

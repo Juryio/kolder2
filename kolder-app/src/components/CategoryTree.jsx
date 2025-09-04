@@ -83,6 +83,7 @@ const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory
           />
         ) : (
           <Heading
+            id={`category-name-display-${category._id}`}
             size="sm"
             cursor="pointer"
             onDoubleClick={() => setIsEditing(true)}
@@ -99,12 +100,14 @@ const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory
           ml="2"
           icon={<AddIcon />}
           onClick={() => onAdd(category._id)}
+          onMouseDown={(e) => e.stopPropagation()}
         />
         <IconButton
           size="xs"
           ml="2"
           icon={<DeleteIcon />}
           onClick={() => onDelete(category._id)}
+          onMouseDown={(e) => e.stopPropagation()}
         />
       </Flex>
       <Collapse in={isOpen}>
@@ -159,8 +162,8 @@ const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, s
   return (
     <Box>
       <Flex align="center" mb="4">
-        <Heading size="md">Categories</Heading>
         <Button
+            id="category-widget-add-button"
             size="sm"
             ml="auto"
             onClick={() => onAdd(null)}

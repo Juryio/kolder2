@@ -8,7 +8,6 @@ import {
   Heading,
   Text,
   IconButton,
-  useDisclosure,
   Input,
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon, EditIcon } from '@chakra-ui/icons';
@@ -63,25 +62,25 @@ const DraggableSnippetItem = ({ snippet, categories, onSelectSnippet, onEdit, on
                 )}
             </Box>
             <Box>
-                <IconButton size="sm" icon={<EditIcon />} mr="2" onClick={() => onEdit(snippet)} />
-                <IconButton size="sm" icon={<DeleteIcon />} onClick={() => onDelete(snippet._id)} />
+                <IconButton size="sm" icon={<EditIcon />} mr="2" onClick={() => onEdit(snippet)} onMouseDown={(e) => e.stopPropagation()} />
+                <IconButton size="sm" icon={<DeleteIcon />} onClick={() => onDelete(snippet._id)} onMouseDown={(e) => e.stopPropagation()} />
             </Box>
         </Flex>
     );
 }
 
 const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, onEdit, onDelete, onSelectSnippet, settings }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
   const [editingSnippet, setEditingSnippet] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleNew = () => {
     setEditingSnippet(null);
-    onOpen();
+    setIsEditing(true);
   };
 
   const handleEdit = (snippet) => {
     setEditingSnippet(snippet);
-    onOpen();
+    setIsEditing(true);
   };
 
   const handleSave = (snippet) => {
@@ -90,15 +89,31 @@ const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, 
     } else {
       onAdd(snippet);
     }
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
   };
 
   const isSearching = searchTerm !== '';
 
+  if (isEditing) {
+    return (
+      <SnippetEditor
+        onClose={handleCancel}
+        onSave={handleSave}
+        snippet={editingSnippet}
+        settings={settings}
+      />
+    );
+  }
+
   return (
     <Box>
       <Flex align="center" mb="4">
-        <Heading size="md">{isSearching ? `Search Results for "${searchTerm}"` : 'Snippets'}</Heading>
         <Button
+            id="snippet-list-new-snippet-button"
             size="sm"
             ml="auto"
             leftIcon={<AddIcon />}
@@ -139,13 +154,6 @@ const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, 
           />
         ))
       )}
-      <SnippetEditor
-        isOpen={isOpen}
-        onClose={onClose}
-        onSave={handleSave}
-        snippet={editingSnippet}
-        settings={settings}
-      />
     </Box>
   );
 };

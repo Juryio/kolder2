@@ -56,7 +56,7 @@ const MainView = ({
     ];
 
     return (
-        <GridLayout className="layout" layout={layout} cols={12} rowHeight={30} width={1200}>
+        <GridLayout className="layout" layout={layout} cols={12} rowHeight={30} width={1200} draggableHandle=".drag-handle">
             <div key="categories">
                 <CategoryTreeWidget
                     settings={settings}
