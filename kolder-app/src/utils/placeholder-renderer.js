@@ -1,9 +1,37 @@
 import { add, sub, format } from 'date-fns';
 
-const evaluateValuePlaceholder = (expression, values) => {
+const findMatchingBrackets = (content, start) => {
+    let depth = 1;
+    for (let i = start; i < content.length - 1; i++) {
+        if (content.substring(i, i + 2) === '{{') {
+            depth++;
+            i++;
+        } else if (content.substring(i, i + 2) === '}}') {
+            depth--;
+            if (depth === 0) {
+                return i;
+            }
+            i++;
+        }
+    }
+    return -1; // Not found
+};
+
+const evaluateExpression = (expression, values) => {
     expression = expression.trim();
 
-    // Handle 'date:' placeholders
+    // --- PASS 1: Structural Placeholders ---
+    if (expression.startsWith('select:')) {
+        const selectExpressionRegex = /^select:(\w+):/;
+        const parts = expression.match(selectExpressionRegex);
+        if (!parts) return `{{${expression}}}`;
+
+        const variable = parts[1];
+        // Recursively render the result of the choice
+        return renderPlaceholders(values.choice?.[variable] || '', values);
+    }
+
+    // --- PASS 2: Value Placeholders ---
     if (expression.startsWith('date:')) {
         const dateExpressionRegex = /^date:(\w+)(?:\s*([+-])\s*(\d+)\s*([dwmy]))?$/;
         const parts = expression.match(dateExpressionRegex);
@@ -35,48 +63,39 @@ const evaluateValuePlaceholder = (expression, values) => {
         }
     }
 
-    // Handle simple text placeholders
+    // Simple text placeholder
     return values.text?.[expression] || '';
 };
 
-const evaluateStructuralPlaceholder = (expression, values) => {
-    expression = expression.trim();
-
-    if (expression.startsWith('select:')) {
-        const selectExpressionRegex = /^select:(\w+):/;
-        const parts = expression.match(selectExpressionRegex);
-        if (!parts) return `{{${expression}}}`;
-
-        const variable = parts[1];
-        return values.choice?.[variable] || '';
-    }
-
-    // For any other placeholder type in Pass 1, just return it as is.
-    return `{{${expression}}}`;
-};
-
-
-// This new renderer will handle all placeholder types using a two-pass system.
 export const renderPlaceholders = (content, values) => {
     if (!content) {
         return '';
     }
 
-    const placeholderRegex = /{{\s*([^}]+?)\s*}}/g;
+    let result = '';
+    let currentIndex = 0;
 
-    // --- PASS 1: Resolve structural placeholders (e.g., select) ---
-    const pass1Content = content.replace(placeholderRegex, (match, expression) => {
-        return evaluateStructuralPlaceholder(expression, values);
-    });
-
-    // --- PASS 2: Resolve value placeholders (e.g., text, date) ---
-    const pass2Content = pass1Content.replace(placeholderRegex, (match, expression) => {
-        // If a select placeholder still exists (e.g., one was not selected), don't evaluate it as a value.
-        if (expression.trim().startsWith('select:')) {
-            return '';
+    while (currentIndex < content.length) {
+        const openPos = content.indexOf('{{', currentIndex);
+        if (openPos === -1) {
+            result += content.substring(currentIndex);
+            break;
         }
-        return evaluateValuePlaceholder(expression, values);
-    });
 
-    return pass2Content;
+        result += content.substring(currentIndex, openPos);
+
+        const closePos = findMatchingBrackets(content, openPos + 2);
+
+        if (closePos !== -1) {
+            const expression = content.substring(openPos + 2, closePos);
+            result += evaluateExpression(expression, values);
+            currentIndex = closePos + 2;
+        } else {
+            // Unmatched opening bracket, just append the rest of the string and stop
+            result += content.substring(openPos);
+            break;
+        }
+    }
+
+    return result;
 };
