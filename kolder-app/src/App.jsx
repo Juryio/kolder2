@@ -12,8 +12,13 @@ import {
   Image,
 } from '@chakra-ui/react';
 import { SettingsIcon, ViewIcon, AddIcon } from '@chakra-ui/icons';
-import CategoryTree from './components/CategoryTree';
-import SnippetList from './components/SnippetList';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import debounce from 'lodash.debounce';
+import GridLayout from 'react-grid-layout';
+import CategoryTreeWidget from './components/widgets/CategoryTreeWidget';
+import SnippetListWidget from './components/widgets/SnippetListWidget';
+import CalendarWidget from './components/widgets/CalendarWidget';
 import SnippetViewer from './components/SnippetViewer';
 import AddCategoryModal from './components/AddCategoryModal';
 import SettingsModal from './components/SettingsModal';
@@ -23,6 +28,86 @@ import StartingSnippetManager from './components/StartingSnippetManager';
 const api = axios.create({
   baseURL: '/api',
 });
+
+// Moved MainView outside of the App component to prevent re-renders
+const MainView = ({
+    settings,
+    categories,
+    onOpenAddCategoryModal,
+    onEditCategory,
+    onDeleteCategory,
+    onSelectCategory,
+    selectedCategory,
+    openCategories,
+    onToggleCategory,
+    selectedSnippet,
+    onBackToList,
+    snippets,
+    searchTerm,
+    onSearchChange,
+    onAddSnippet,
+    onEditSnippet,
+    onDeleteSnippet,
+    onSelectSnippet,
+    onMoveCategory,
+    onMoveSnippet,
+    onLayoutChange,
+}) => {
+    const defaultLayout = [
+        { i: 'categories', x: 0, y: 0, w: 3, h: 8, minW: 2, maxW: 6 },
+        { i: 'snippets', x: 3, y: 0, w: 6, h: 12, minW: 3 },
+        { i: 'calendar', x: 9, y: 0, w: 3, h: 8, minW: 2, maxW: 4 },
+    ];
+
+    const layout = settings.dashboardLayout || defaultLayout;
+
+    return (
+        <GridLayout
+            className="layout"
+            layout={layout}
+            onLayoutChange={onLayoutChange}
+            cols={12}
+            rowHeight={30}
+            width={1200}
+        >
+            <div key="categories">
+                <CategoryTreeWidget
+                    settings={settings}
+                    categories={categories}
+                    onAdd={onOpenAddCategoryModal}
+                    onEdit={onEditCategory}
+                    onDelete={onDeleteCategory}
+                    onSelectCategory={onSelectCategory}
+                    selectedCategory={selectedCategory}
+                    openCategories={openCategories}
+                    onToggleCategory={onToggleCategory}
+                    onMove={onMoveCategory}
+                    onMoveSnippet={onMoveSnippet}
+                />
+            </div>
+            <div key="snippets">
+                {selectedSnippet ? (
+                    <SnippetViewer snippet={selectedSnippet} onBack={onBackToList} settings={settings} />
+                ) : (
+                    <SnippetListWidget
+                        snippets={snippets}
+                        categories={categories}
+                        searchTerm={searchTerm}
+                        onSearchChange={onSearchChange}
+                        onAdd={onAddSnippet}
+                        onEdit={onEditSnippet}
+                        onDelete={onDeleteSnippet}
+                        onSelectSnippet={onSelectSnippet}
+                        settings={settings}
+                    />
+                )}
+            </div>
+            <div key="calendar">
+                <CalendarWidget />
+            </div>
+        </GridLayout>
+    );
+};
 
 function App() {
   const [categories, setCategories] = useState([]);
@@ -100,6 +185,18 @@ function App() {
     }
   };
 
+  const debouncedSaveLayout = useRef(
+    debounce((newLayout) => {
+        handleSaveSettings({ dashboardLayout: newLayout });
+    }, 1000)
+  ).current;
+
+  const handleLayoutChange = (layout) => {
+    // This function is called frequently during drag/resize.
+    // We debounce the actual save operation.
+    debouncedSaveLayout(layout);
+  };
+
   const handleAddCategory = async (name) => {
     try {
       await api.post('/categories', { name, parentId: addCategoryParentId });
@@ -124,6 +221,24 @@ function App() {
       await fetchAllData();
     } catch (error) {
       console.error('Error deleting category:', error);
+    }
+  };
+
+  const handleMoveCategory = async (draggedId, targetId) => {
+    try {
+        await api.put(`/categories/${draggedId}`, { parentId: targetId });
+        await fetchAllData();
+    } catch (error) {
+        console.error('Error moving category:', error);
+    }
+  };
+
+  const handleMoveSnippet = async (snippetId, categoryId) => {
+    try {
+        await api.put(`/snippets/${snippetId}`, { categoryId: categoryId });
+        await fetchAllData();
+    } catch (error) {
+        console.error('Error moving snippet:', error);
     }
   };
 
@@ -178,48 +293,35 @@ function App() {
       )
     : snippets.filter(snippet => snippet.categoryId === selectedCategory);
 
-  const MainView = () => (
-    <Flex flex="1">
-        <Box as="aside" w="300px" p="4" borderRightWidth="1px" bg={settings?.theme.contentBackgroundColor} borderColor={settings?.theme.contentBackgroundColor} overflowX="auto">
-        <CategoryTree
-            settings={settings}
-            categories={categories}
-            onAdd={handleOpenAddCategoryModal}
-            onEdit={handleEditCategory}
-            onDelete={handleDeleteCategory}
-            onSelectCategory={handleSelectCategory}
-            selectedCategory={selectedCategory}
-                openCategories={openCategories}
-                onToggleCategory={handleToggleCategory}
-        />
-        </Box>
-        <Box as="main" flex="1" p="4">
-        {selectedSnippet ? (
-            <SnippetViewer snippet={selectedSnippet} onBack={handleBackToList} settings={settings} />
-        ) : (
-            <SnippetList
-            snippets={filteredSnippets}
-            categories={categories}
-            searchTerm={searchTerm}
-            onSearchChange={handleSearchChange}
-            onAdd={handleAddSnippet}
-            onEdit={handleEditSnippet}
-            onDelete={handleDeleteSnippet}
-            onSelectSnippet={handleSelectSnippet}
-            settings={settings}
-            />
-        )}
-        </Box>
-    </Flex>
-  );
-
   const renderView = () => {
       switch(currentView) {
           case 'analytics':
               return <AnalyticsPage onBack={() => setCurrentView('main')} snippets={snippets} setSnippets={setSnippets} settings={settings}/>;
           case 'main':
           default:
-              return <MainView />;
+              return <MainView
+                  settings={settings}
+                  categories={categories}
+                  onOpenAddCategoryModal={handleOpenAddCategoryModal}
+                  onEditCategory={handleEditCategory}
+                  onDeleteCategory={handleDeleteCategory}
+                  onSelectCategory={handleSelectCategory}
+                  selectedCategory={selectedCategory}
+                  openCategories={openCategories}
+                  onToggleCategory={handleToggleCategory}
+                  selectedSnippet={selectedSnippet}
+                  onBackToList={handleBackToList}
+                  snippets={filteredSnippets}
+                  searchTerm={searchTerm}
+                  onSearchChange={handleSearchChange}
+                  onAddSnippet={handleAddSnippet}
+                  onEditSnippet={handleEditSnippet}
+                  onDeleteSnippet={handleDeleteSnippet}
+                  onSelectSnippet={handleSelectSnippet}
+                  onMoveCategory={handleMoveCategory}
+                  onMoveSnippet={handleMoveSnippet}
+                  onLayoutChange={handleLayoutChange}
+              />;
       }
   }
 
@@ -232,9 +334,10 @@ function App() {
   }
 
   return (
-    <Flex direction="column" minH="100vh" w="100%" bg={settings?.theme.backgroundColor} color={settings?.theme.textColor}>
-      <Flex as="header" p="4" borderBottomWidth="1px" alignItems="center" borderColor={settings?.theme.contentBackgroundColor}>
-        {settings?.icon && <Image src={settings.icon} alt="App Icon" boxSize="32px" mr={3} />}
+    <DndProvider backend={HTML5Backend}>
+      <Flex direction="column" minH="100vh" w="100%" bg={settings?.theme.backgroundColor} color={settings?.theme.textColor}>
+        <Flex as="header" p="4" borderBottomWidth="1px" alignItems="center" borderColor={settings?.theme.contentBackgroundColor}>
+          {settings?.icon && <Image src={settings.icon} alt="App Icon" boxSize="32px" mr={3} />}
         <Heading size="md">{settings?.title || 'Kolder'}</Heading>
         <Spacer />
         <IconButton
@@ -278,6 +381,7 @@ function App() {
         settings={settings}
       />
     </Flex>
+    </DndProvider>
   );
 }
 
