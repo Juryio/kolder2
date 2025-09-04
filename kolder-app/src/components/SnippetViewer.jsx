@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { evaluatePlaceholders } from '../utils/placeholder-evaluator';
+import { renderPlaceholders } from '../utils/placeholder-renderer';
 import {
   Box,
   Button,
@@ -11,6 +11,9 @@ import {
   Text,
   VStack,
   Select,
+  RadioGroup,
+  Radio,
+  HStack,
 } from '@chakra-ui/react';
 import { ArrowBackIcon } from '@chakra-ui/icons';
 import axios from 'axios';
@@ -22,31 +25,18 @@ const api = axios.create({
     baseURL: '/api',
 });
 
+import { parsePlaceholders } from '../utils/placeholder-parser';
+
 // A new sub-component to manage the date variables UI in the viewer
-const DateManager = ({ content, dateValues, onDateChange }) => {
-    const placeholderRegex = /{{\s*([^}]+)\s*}}/g;
-    const dateVarRegex = /^date:(\w+)/; // Matches "date:name" at the start of an expression
-
-    const found = content.matchAll(placeholderRegex);
-    const baseVars = new Set();
-    for (const match of found) {
-        const expression = match[1]; // e.g., "date:invoice_date + 5d"
-        const dateVarMatch = expression.match(dateVarRegex);
-        if (dateVarMatch) {
-            // dateVarMatch[1] will be "invoice_date"
-            baseVars.add(dateVarMatch[1]);
-        }
-    }
-    const uniqueBaseVars = [...baseVars];
-
-    if (uniqueBaseVars.length === 0) {
+const DateManager = ({ dateVars, dateValues, onDateChange }) => {
+    if (!dateVars || dateVars.length === 0) {
         return null;
     }
 
     return (
         <Box mt={4}>
             <Heading size="sm" mb="2">Set Dates</Heading>
-            {uniqueBaseVars.map(varName => (
+            {dateVars.map(varName => (
                 <FormControl key={varName} mt="2">
                     <FormLabel>{varName}</FormLabel>
                     <DatePicker
@@ -62,9 +52,39 @@ const DateManager = ({ content, dateValues, onDateChange }) => {
     );
 };
 
+const ChoiceManager = ({ choices, choiceValues, onChoiceChange }) => {
+    if (!choices || choices.length === 0) {
+        return null;
+    }
+
+    return (
+        <Box mt={4}>
+            <Heading size="sm" mb="2">Choose Options</Heading>
+            {choices.map(({ name, displayType, options }) => (
+                <FormControl key={name} mt="2">
+                    <FormLabel>{name}</FormLabel>
+                    {displayType === 'radio' ? (
+                        <RadioGroup onChange={(value) => onChoiceChange(name, value)} value={choiceValues[name]}>
+                            <HStack>
+                                {options.map(opt => <Radio key={opt} value={opt}>{opt}</Radio>)}
+                            </HStack>
+                        </RadioGroup>
+                    ) : (
+                        <Select placeholder="Select option" onChange={(e) => onChoiceChange(name, e.target.value)} value={choiceValues[name]}>
+                            {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </Select>
+                    )}
+                </FormControl>
+            ))}
+        </Box>
+    );
+};
+
 const SnippetViewer = ({ snippet, onBack, settings }) => {
+  const [parsedPlaceholders, setParsedPlaceholders] = useState({ text: [], date: [], choice: [] });
   const [placeholders, setPlaceholders] = useState({});
   const [viewerDateValues, setViewerDateValues] = useState({});
+  const [choiceValues, setChoiceValues] = useState({});
   const [output, setOutput] = useState('');
   const [hasCopied, setHasCopied] = useState(false);
   const [startingSnippets, setStartingSnippets] = useState([]);
@@ -77,29 +97,26 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
        .catch(error => console.error('Error fetching starting snippets', error));
   }, []);
 
-  // Set placeholders when snippet changes
+  // Parse placeholders whenever the snippet content changes
   useEffect(() => {
-    if (!snippet.content) return;
+    if (snippet && snippet.content) {
+        const parsed = parsePlaceholders(snippet.content);
+        setParsedPlaceholders(parsed);
 
-    // This regex now finds simple {{placeholders}} but ignores the {{date:...}} ones
-    const placeholderRegex = /{{\s*(?!date:)([^}]+)\s*}}/g;
-    const foundPlaceholders = [...snippet.content.matchAll(placeholderRegex)];
-    const initialPlaceholders = {};
+        // Initialize values
+        const initialTextValues = {};
+        parsed.text.forEach(name => initialTextValues[name] = '');
+        setPlaceholders(initialTextValues);
 
-    const placeholderNames = new Set();
-    foundPlaceholders.forEach(match => {
-        const name = match[1];
-        if (name) {
-            placeholderNames.add(name.trim());
-        }
-    });
-
-    placeholderNames.forEach(name => {
-        initialPlaceholders[name] = '';
-    });
-
-    setPlaceholders(initialPlaceholders);
-    setViewerDateValues({}); // Also reset date values
+        setViewerDateValues({});
+        setChoiceValues({});
+    } else {
+        // Clear everything if there's no snippet
+        setParsedPlaceholders({ text: [], date: [], choice: [] });
+        setPlaceholders({});
+        setViewerDateValues({});
+        setChoiceValues({});
+    }
     setPrefix(''); // Reset prefix when snippet changes
   }, [snippet]);
 
@@ -110,19 +127,27 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
     }));
   };
 
+  const handleChoiceChange = (variableName, value) => {
+    setChoiceValues(prev => ({
+        ...prev,
+        [variableName]: value,
+    }));
+  };
+
   // Update the final output when prefix, placeholders, or dates change
   useEffect(() => {
-    // 1. Evaluate our new dynamic date placeholders first
-    const evaluatedContent = evaluatePlaceholders(snippet.content, viewerDateValues);
-
-    // 2. The existing logic for simple text placeholders then runs on the result
-    let snippetWithPlaceholders = evaluatedContent || '';
-    for (const key in placeholders) {
-      const replacementRegex = new RegExp(`{{${key}}}`, 'g');
-      snippetWithPlaceholders = snippetWithPlaceholders.replace(replacementRegex, placeholders[key]);
+    if (snippet && snippet.content) {
+        const allValues = {
+            text: placeholders,
+            date: viewerDateValues,
+            choice: choiceValues,
+        };
+        const evaluatedContent = renderPlaceholders(snippet.content, allValues);
+        setOutput(prefix + evaluatedContent);
+    } else {
+        setOutput(prefix);
     }
-    setOutput(prefix + snippetWithPlaceholders);
-  }, [prefix, placeholders, snippet, viewerDateValues]);
+  }, [prefix, placeholders, snippet, viewerDateValues, choiceValues]);
 
   const handleCopy = () => {
     const tempDiv = document.createElement('div');
@@ -193,15 +218,21 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
           </FormControl>
 
           <DateManager
-            content={snippet.content || ''}
+            dateVars={parsedPlaceholders.date}
             dateValues={viewerDateValues}
             onDateChange={handleDateChange}
           />
 
-          {Object.keys(placeholders).length > 0 && (
+          <ChoiceManager
+            choices={parsedPlaceholders.choice}
+            choiceValues={choiceValues}
+            onChoiceChange={handleChoiceChange}
+          />
+
+          {parsedPlaceholders.text.length > 0 && (
             <Box mt={4}>
                 <Heading size="sm" mb="2">Fill Placeholders</Heading>
-                {Object.keys(placeholders).map(key => (
+                {parsedPlaceholders.text.map(key => (
                 <FormControl key={key} mt="2">
                     <FormLabel>{key}</FormLabel>
                     <Input
