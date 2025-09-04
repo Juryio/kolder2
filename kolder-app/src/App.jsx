@@ -16,8 +16,6 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import debounce from 'lodash.debounce';
 import GridLayout from 'react-grid-layout';
-import 'react-grid-layout/css/styles.css';
-import 'react-resizable/css/styles.css';
 import CategoryTreeWidget from './components/widgets/CategoryTreeWidget';
 import SnippetListWidget from './components/widgets/SnippetListWidget';
 import CalendarWidget from './components/widgets/CalendarWidget';
