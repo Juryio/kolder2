@@ -14,8 +14,11 @@ import {
 import { SettingsIcon, ViewIcon, AddIcon } from '@chakra-ui/icons';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import CategoryTree from './components/CategoryTree';
-import SnippetList from './components/SnippetList';
+import GridLayout from 'react-grid-layout';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
+import CategoryTreeWidget from './components/widgets/CategoryTreeWidget';
+import SnippetListWidget from './components/widgets/SnippetListWidget';
 import SnippetViewer from './components/SnippetViewer';
 import AddCategoryModal from './components/AddCategoryModal';
 import SettingsModal from './components/SettingsModal';
@@ -48,42 +51,49 @@ const MainView = ({
     onSelectSnippet,
     onMoveCategory,
     onMoveSnippet,
-}) => (
-    <Flex flex="1">
-        <Box as="aside" w="300px" p="4" borderRightWidth="1px" bg={settings?.theme.contentBackgroundColor} borderColor={settings?.theme.contentBackgroundColor} overflowX="auto">
-            <CategoryTree
-                settings={settings}
-                categories={categories}
-                onAdd={onOpenAddCategoryModal}
-                onEdit={onEditCategory}
-                onDelete={onDeleteCategory}
-                onSelectCategory={onSelectCategory}
-                selectedCategory={selectedCategory}
-                openCategories={openCategories}
-                onToggleCategory={onToggleCategory}
-                onMove={onMoveCategory}
-                onMoveSnippet={onMoveSnippet}
-            />
-        </Box>
-        <Box as="main" flex="1" p="4">
-            {selectedSnippet ? (
-                <SnippetViewer snippet={selectedSnippet} onBack={onBackToList} settings={settings} />
-            ) : (
-                <SnippetList
-                    snippets={snippets}
-                    categories={categories}
-                    searchTerm={searchTerm}
-                    onSearchChange={onSearchChange}
-                    onAdd={onAddSnippet}
-                    onEdit={onEditSnippet}
-                    onDelete={onDeleteSnippet}
-                    onSelectSnippet={onSelectSnippet}
+}) => {
+    const layout = [
+        { i: 'categories', x: 0, y: 0, w: 3, h: 10 },
+        { i: 'snippets', x: 3, y: 0, w: 9, h: 10 },
+    ];
+
+    return (
+        <GridLayout className="layout" layout={layout} cols={12} rowHeight={30} width={1200}>
+            <div key="categories">
+                <CategoryTreeWidget
                     settings={settings}
+                    categories={categories}
+                    onAdd={onOpenAddCategoryModal}
+                    onEdit={onEditCategory}
+                    onDelete={onDeleteCategory}
+                    onSelectCategory={onSelectCategory}
+                    selectedCategory={selectedCategory}
+                    openCategories={openCategories}
+                    onToggleCategory={onToggleCategory}
+                    onMove={onMoveCategory}
+                    onMoveSnippet={onMoveSnippet}
                 />
-            )}
-        </Box>
-    </Flex>
-);
+            </div>
+            <div key="snippets">
+                {selectedSnippet ? (
+                    <SnippetViewer snippet={selectedSnippet} onBack={onBackToList} settings={settings} />
+                ) : (
+                    <SnippetListWidget
+                        snippets={snippets}
+                        categories={categories}
+                        searchTerm={searchTerm}
+                        onSearchChange={onSearchChange}
+                        onAdd={onAddSnippet}
+                        onEdit={onEditSnippet}
+                        onDelete={onDeleteSnippet}
+                        onSelectSnippet={onSelectSnippet}
+                        settings={settings}
+                    />
+                )}
+            </div>
+        </GridLayout>
+    );
+};
 
 function App() {
   const [categories, setCategories] = useState([]);
