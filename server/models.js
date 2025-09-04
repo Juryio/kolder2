@@ -10,7 +10,8 @@ const snippetSchema = new mongoose.Schema({
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
     name: { type: String, required: true },
     content: String,
-    useCount: { type: Number, default: 0 }
+    useCount: { type: Number, default: 0 },
+    dateValues: { type: mongoose.Schema.Types.Mixed, default: {} }
 });
 
 const settingsSchema = new mongoose.Schema({
@@ -21,8 +22,7 @@ const settingsSchema = new mongoose.Schema({
         contentBackgroundColor: { type: String, default: '#2D3748' },
         textColor: { type: String, default: '#EDF2F7' },
         accentColor: { type: String, default: '#805AD5' },
-    },
-    dashboardLayout: { type: mongoose.Schema.Types.Mixed, default: null }
+    }
 });
 
 const startingSnippetSchema = new mongoose.Schema({
