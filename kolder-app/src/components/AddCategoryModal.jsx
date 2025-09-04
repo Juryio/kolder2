@@ -33,6 +33,7 @@ const AddCategoryModal = ({ isOpen, onClose, onAdd, settings }) => {
           <FormControl>
             <FormLabel>Category Name</FormLabel>
             <Input
+              id="new-category-name-input"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter category name"
@@ -41,6 +42,7 @@ const AddCategoryModal = ({ isOpen, onClose, onAdd, settings }) => {
         </ModalBody>
         <ModalFooter>
           <Button
+            id="new-category-save-button"
             bgGradient={`linear(to-r, ${settings?.theme.accentColor}, purple.500)`}
             _hover={{
                 bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`

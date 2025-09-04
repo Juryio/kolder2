@@ -1,12 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
+  Box,
   FormControl,
   FormLabel,
   Input,
@@ -54,41 +48,35 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} size="xl">
-        <ModalOverlay />
-        <ModalContent bg={settings?.theme.contentBackgroundColor} color={settings?.theme.textColor}>
-          <ModalHeader>{snippet ? 'Edit Snippet' : 'New Snippet'}</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <VStack spacing={4} align="stretch">
-              <FormControl>
-                  <FormLabel>Name</FormLabel>
-                  <Input value={name} onChange={(e) => setName(e.target.value)} />
-              </FormControl>
-              <FormControl>
-                  <Flex justify="space-between" align="center">
-                      <FormLabel mb="0">Content</FormLabel>
-                      <Button size="xs" onClick={onBuilderOpen}>Insert Placeholder</Button>
-                  </Flex>
-                  <ReactQuill ref={quillRef} theme="snow" value={content} onChange={setContent} style={{marginTop: '8px'}}/>
-              </FormControl>
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              bgGradient={`linear(to-r, ${settings?.theme.accentColor}, purple.500)`}
-              _hover={{
-                  bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`
-              }}
-              mr={3}
-              onClick={handleSave}
-            >
-              Save
-            </Button>
-            <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <Box>
+        <Heading size="md" mb={4}>{snippet ? 'Edit Snippet' : 'New Snippet'}</Heading>
+        <VStack spacing={4} align="stretch">
+          <FormControl>
+              <FormLabel>Name</FormLabel>
+              <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </FormControl>
+          <FormControl>
+              <Flex justify="space-between" align="center">
+                  <FormLabel mb="0">Content</FormLabel>
+                  <Button size="xs" onClick={onBuilderOpen}>Insert Placeholder</Button>
+              </Flex>
+              <ReactQuill ref={quillRef} theme="snow" value={content} onChange={setContent} style={{marginTop: '8px'}}/>
+          </FormControl>
+        </VStack>
+        <Flex mt={4} justify="flex-end">
+          <Button
+            bgGradient={`linear(to-r, ${settings?.theme.accentColor}, purple.500)`}
+            _hover={{
+                bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`
+            }}
+            mr={3}
+            onClick={handleSave}
+          >
+            Save
+          </Button>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+        </Flex>
+      </Box>
       <PlaceholderBuilderModal
         isOpen={isBuilderOpen}
         onClose={onBuilderClose}
