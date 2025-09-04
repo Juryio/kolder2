@@ -3,7 +3,7 @@ import CategoryTree from '../CategoryTree';
 
 const CategoryTreeWidget = (props) => {
     return (
-        <Box borderWidth="1px" borderRadius="lg" p={4} h="100%" overflowY="auto">
+        <Box borderWidth="1px" borderRadius="lg" p={4} h="100%">
             <CategoryTree {...props} />
         </Box>
     );
