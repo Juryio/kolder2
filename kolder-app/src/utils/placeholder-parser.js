@@ -1,12 +1,12 @@
+import { scanForPlaceholders } from './placeholder-scanner';
+
 const _recursiveParse = (content, placeholders) => {
     if (!content) {
         return;
     }
 
-    const placeholderRegex = /{{\s*([^}]+)\s*}}/g;
-    for (const match of content.matchAll(placeholderRegex)) {
-        const expression = match[1].trim();
-
+    const expressions = scanForPlaceholders(content);
+    for (const expression of expressions) {
         if (expression.startsWith('date:')) {
             const name = expression.substring(5).split(' ')[0];
             if (name) placeholders.date.add(name);
