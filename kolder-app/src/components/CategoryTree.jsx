@@ -62,8 +62,8 @@ const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory
   const isSelected = selectedCategory === category._id;
 
   return (
-    <Box pl="4" mt="2" ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }}>
-      <Flex align="center" bg={isOver && canDrop ? 'green.100' : 'transparent'} borderRadius="md">
+    <Box pl="4" mt="2" style={{ opacity: isDragging ? 0.5 : 1 }}>
+      <Flex align="center" ref={ref} bg={isOver && canDrop ? 'green.100' : 'transparent'} borderRadius="md">
         <IconButton
           size="xs"
           mr="2"
