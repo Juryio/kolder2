@@ -196,7 +196,7 @@ const PlaceholderBuilderModal = ({ isOpen, onClose, onInsert }) => {
           <Button colorScheme="blue" mr={3} onClick={handleInsert}>
             Insert
           </Button>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>Cancel</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

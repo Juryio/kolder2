@@ -92,7 +92,7 @@ const SnippetEditor = ({ isOpen, onClose, onSave, snippet, settings }) => {
           >
             Save
           </Button>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>Cancel</Button>
         </Flex>
       </Box>
       <PlaceholderBuilderModal
