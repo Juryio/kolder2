@@ -15,6 +15,7 @@ import {
   RadioGroup,
   Radio,
   HStack,
+  SimpleGrid,
 } from '@chakra-ui/react';
 import { ArrowBackIcon } from '@chakra-ui/icons';
 import axios from 'axios';
@@ -27,65 +28,55 @@ const api = axios.create({
 });
 
 /**
- * A sub-component to manage the UI for date placeholders.
+ * Renders the UI for date placeholders.
  * @param {object} props - The component's props.
- * @returns {JSX.Element | null} The rendered component.
+ * @returns {Array<JSX.Element>} An array of FormControl elements.
  */
-const DateManager = ({ dateVars, dateValues, onDateChange }) => {
+const renderDateInputs = ({ dateVars, dateValues, onDateChange }) => {
     if (!dateVars || dateVars.length === 0) {
-        return null;
+        return [];
     }
 
-    return (
-        <Box mt={4}>
-            <Heading size="sm" mb="2">Set Dates</Heading>
-            {dateVars.map(varName => (
-                <FormControl key={varName} mt="2">
-                    <FormLabel>{varName}</FormLabel>
-                    <DatePicker
-                        selected={dateValues[varName] ? new Date(dateValues[varName]) : null}
-                        onChange={date => onDateChange(varName, date)}
-                        customInput={<Input />}
-                        dateFormat="dd.MM.yyyy"
-                        isClearable
-                    />
-                </FormControl>
-            ))}
-        </Box>
-    );
+    return dateVars.map(varName => (
+        <FormControl key={`date-${varName}`}>
+            <FormLabel>{varName}</FormLabel>
+            <DatePicker
+                selected={dateValues[varName] ? new Date(dateValues[varName]) : null}
+                onChange={date => onDateChange(varName, date)}
+                customInput={<Input />}
+                dateFormat="dd.MM.yyyy"
+                isClearable
+            />
+        </FormControl>
+    ));
 };
 
 /**
- * A sub-component to manage the UI for choice placeholders.
+ * Renders the UI for choice placeholders.
  * @param {object} props - The component's props.
- * @returns {JSX.Element | null} The rendered component.
+ * @returns {Array<JSX.Element>} An array of FormControl elements.
  */
-const ChoiceManager = ({ choices, choiceValues, onChoiceChange }) => {
+const renderChoiceInputs = ({ choices, choiceValues, onChoiceChange }) => {
     if (!choices || choices.length === 0) {
-        return null;
+        return [];
     }
 
-    return (
-        <Box mt={4}>
-            <Heading size="sm" mb="2">Choose Options</Heading>
-            {choices.map(({ name, displayType, options }) => (
-                <FormControl key={name} mt="2">
-                    <FormLabel>{name}</FormLabel>
-                    {displayType === 'radio' ? (
-                        <RadioGroup onChange={(value) => onChoiceChange(name, value)} value={choiceValues[name]}>
-                            <HStack>
-                                {options.map(opt => <Radio key={opt} value={opt}>{opt}</Radio>)}
-                            </HStack>
-                        </RadioGroup>
-                    ) : (
-                        <Select placeholder="Select option" onChange={(e) => onChoiceChange(name, e.target.value)} value={choiceValues[name]}>
-                            {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                        </Select>
-                    )}
-                </FormControl>
-            ))}
-        </Box>
-    );
+    return choices.map(({ name, displayType, options }) => (
+        <FormControl key={`choice-${name}`}>
+            <FormLabel>{name}</FormLabel>
+            {displayType === 'radio' ? (
+                <RadioGroup onChange={(value) => onChoiceChange(name, value)} value={choiceValues[name]}>
+                    <HStack>
+                        {options.map(opt => <Radio key={opt} value={opt}>{opt}</Radio>)}
+                    </HStack>
+                </RadioGroup>
+            ) : (
+                <Select placeholder="Select option" onChange={(e) => onChoiceChange(name, e.target.value)} value={choiceValues[name]}>
+                    {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </Select>
+            )}
+        </FormControl>
+    ));
 };
 
 /**
@@ -235,6 +226,20 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
     }
   };
 
+  const dateInputs = renderDateInputs({ dateVars: parsedPlaceholders.date, dateValues: viewerDateValues, onDateChange: handleDateChange });
+  const choiceInputs = renderChoiceInputs({ choices: parsedPlaceholders.choice, choiceValues: choiceValues, onChoiceChange: handleChoiceChange });
+  const textInputs = parsedPlaceholders.text.map(key => (
+    <FormControl key={`text-${key}`}>
+        <FormLabel>{key}</FormLabel>
+        <Input
+        value={placeholders[key]}
+        onChange={(e) => handlePlaceholderChange(key, e.target.value)}
+        />
+    </FormControl>
+  ));
+
+  const allInputs = [...dateInputs, ...choiceInputs, ...textInputs];
+
   return (
     <Box>
       <Flex align="center" mb="4">
@@ -256,30 +261,12 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
             </Select>
           </FormControl>
 
-          <DateManager
-            dateVars={parsedPlaceholders.date}
-            dateValues={viewerDateValues}
-            onDateChange={handleDateChange}
-          />
-
-          <ChoiceManager
-            choices={parsedPlaceholders.choice}
-            choiceValues={choiceValues}
-            onChoiceChange={handleChoiceChange}
-          />
-
-          {parsedPlaceholders.text.length > 0 && (
+          {allInputs.length > 0 && (
             <Box mt={4}>
                 <Heading size="sm" mb="2">Fill Placeholders</Heading>
-                {parsedPlaceholders.text.map(key => (
-                <FormControl key={key} mt="2">
-                    <FormLabel>{key}</FormLabel>
-                    <Input
-                    value={placeholders[key]}
-                    onChange={(e) => handlePlaceholderChange(key, e.target.value)}
-                    />
-                </FormControl>
-                ))}
+                <SimpleGrid columns={2} spacing={4} mt={2}>
+                    {allInputs}
+                </SimpleGrid>
             </Box>
           )}
         </Box>
