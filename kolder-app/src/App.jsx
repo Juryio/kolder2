@@ -298,7 +298,8 @@ function App() {
     try {
       await api.put(`/snippets/${updatedSnippet._id}`, updatedSnippet);
       await fetchAllData();
-    } catch (error)      console.error('Error editing snippet:', error);
+    } catch (error) {
+      console.error('Error editing snippet:', error);
     }
   };
 
