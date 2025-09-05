@@ -27,12 +27,23 @@ const api = axios.create({
     baseURL: '/api',
 });
 
+/**
+ * A modal dialog for managing starting snippets.
+ * @param {object} props - The component's props.
+ * @param {boolean} props.isOpen - Whether the modal is open.
+ * @param {function} props.onClose - Function to call when the modal is closed.
+ * @param {object} props.settings - The application settings, used for theming.
+ * @returns {JSX.Element} The rendered component.
+ */
 const StartingSnippetManager = ({ isOpen, onClose, settings }) => {
     const [startingSnippets, setStartingSnippets] = useState([]);
     const [newName, setNewName] = useState('');
     const [newContent, setNewContent] = useState('');
     const toast = useToast();
 
+    /**
+     * Fetches the list of starting snippets from the server.
+     */
     const fetchData = async () => {
         try {
             const response = await api.get('/starting-snippets');
@@ -48,6 +59,9 @@ const StartingSnippetManager = ({ isOpen, onClose, settings }) => {
         }
     }, [isOpen]);
 
+    /**
+     * Handles adding a new starting snippet.
+     */
     const handleAdd = async () => {
         if (!newName.trim() || !newContent.trim()) {
             toast({ title: 'Name and content are required.', status: 'error', duration: 2000, isClosable: true });
@@ -65,6 +79,10 @@ const StartingSnippetManager = ({ isOpen, onClose, settings }) => {
         }
     };
 
+    /**
+     * Handles deleting a starting snippet.
+     * @param {string} id - The ID of the snippet to delete.
+     */
     const handleDelete = async (id) => {
         try {
             await api.delete(`/starting-snippets/${id}`);

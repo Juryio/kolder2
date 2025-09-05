@@ -27,6 +27,11 @@ const api = axios.create({
 });
 
 // Moved MainView outside of the App component to prevent re-renders
+/**
+ * The main view of the application, containing the category tree and snippet list/viewer.
+ * @param {object} props - The component's props.
+ * @returns {JSX.Element} The rendered component.
+ */
 const MainView = ({
     settings,
     categories,
@@ -87,6 +92,11 @@ const MainView = ({
     );
 };
 
+/**
+ * The main component of the application.
+ * It manages the application's state and renders the different views.
+ * @returns {JSX.Element} The rendered component.
+ */
 function App() {
   const [categories, setCategories] = useState([]);
   const [snippets, setSnippets] = useState([]);
@@ -102,6 +112,10 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentView, setCurrentView] = useState('main'); // 'main' or 'analytics'
 
+  /**
+   * Toggles the expanded/collapsed state of a category.
+   * @param {string} categoryId - The ID of the category to toggle.
+   */
   const handleToggleCategory = (categoryId) => {
     setOpenCategories(prev => ({
         ...prev,
@@ -109,19 +123,33 @@ function App() {
     }));
   };
 
+  /**
+   * Opens the "Add Category" modal.
+   * @param {string | null} parentId - The ID of the parent category, or null for a root category.
+   */
   const handleOpenAddCategoryModal = (parentId = null) => {
     setAddCategoryParentId(parentId);
     onAddCategoryOpen();
   };
 
+  /**
+   * Sets the currently selected snippet to be displayed in the viewer.
+   * @param {object} snippet - The snippet to select.
+   */
   const handleSelectSnippet = (snippet) => {
     setSelectedSnippet(snippet);
   };
 
+  /**
+   * Returns to the snippet list view from the snippet viewer.
+   */
   const handleBackToList = () => {
     setSelectedSnippet(null);
   };
 
+  /**
+   * Fetches all necessary data from the server.
+   */
   const fetchAllData = async () => {
       setLoading(true);
       try {
@@ -154,6 +182,10 @@ function App() {
     }
   }, [settings]);
 
+  /**
+   * Saves the application settings.
+   * @param {object} newSettings - The new settings object.
+   */
   const handleSaveSettings = async (newSettings) => {
     try {
       const response = await api.put('/settings', newSettings);
@@ -163,6 +195,10 @@ function App() {
     }
   };
 
+  /**
+   * Adds a new category.
+   * @param {string} name - The name of the new category.
+   */
   const handleAddCategory = async (name) => {
     try {
       await api.post('/categories', { name, parentId: addCategoryParentId });
@@ -172,6 +208,11 @@ function App() {
     }
   };
 
+  /**
+   * Edits a category's name.
+   * @param {string} id - The ID of the category to edit.
+   * @param {string} newName - The new name for the category.
+   */
   const handleEditCategory = async (id, newName) => {
     try {
       await api.put(`/categories/${id}`, { name: newName });
@@ -181,6 +222,10 @@ function App() {
     }
   };
 
+  /**
+   * Deletes a category.
+   * @param {string} id - The ID of the category to delete.
+   */
   const handleDeleteCategory = async (id) => {
     try {
       await api.delete(`/categories/${id}`);
@@ -190,6 +235,11 @@ function App() {
     }
   };
 
+  /**
+   * Moves a category to a new parent.
+   * @param {string} draggedId - The ID of the category being moved.
+   * @param {string | null} targetId - The ID of the new parent category, or null for the root.
+   */
   const handleMoveCategory = async (draggedId, targetId) => {
     try {
         await api.put(`/categories/${draggedId}`, { parentId: targetId });
@@ -199,6 +249,11 @@ function App() {
     }
   };
 
+  /**
+   * Moves a snippet to a new category.
+   * @param {string} snippetId - The ID of the snippet being moved.
+   * @param {string} categoryId - The ID of the new category.
+   */
   const handleMoveSnippet = async (snippetId, categoryId) => {
     try {
         await api.put(`/snippets/${snippetId}`, { categoryId: categoryId });
@@ -208,11 +263,19 @@ function App() {
     }
   };
 
+  /**
+   * Sets the currently selected category.
+   * @param {string} id - The ID of the category to select.
+   */
   const handleSelectCategory = (id) => {
     setSelectedCategory(id);
     setSearchTerm('');
   }
 
+  /**
+   * Adds a new snippet.
+   * @param {object} snippet - The snippet object to add.
+   */
   const handleAddSnippet = async (snippet) => {
     if (!selectedCategory) {
         // This should be handled by disabling the button, but as a fallback:
@@ -227,15 +290,22 @@ function App() {
     }
   };
 
+  /**
+   * Edits a snippet.
+   * @param {object} updatedSnippet - The updated snippet object.
+   */
   const handleEditSnippet = async (updatedSnippet) => {
     try {
       await api.put(`/snippets/${updatedSnippet._id}`, updatedSnippet);
       await fetchAllData();
-    } catch (error) {
-      console.error('Error editing snippet:', error);
+    } catch (error)      console.error('Error editing snippet:', error);
     }
   };
 
+  /**
+   * Deletes a snippet.
+   * @param {string} id - The ID of the snippet to delete.
+   */
   const handleDeleteSnippet = async (id) => {
     try {
       await api.delete(`/snippets/${id}`);
@@ -245,6 +315,10 @@ function App() {
     }
   };
 
+  /**
+   * Handles changes to the search term.
+   * @param {string} term - The new search term.
+   */
   const handleSearchChange = (term) => {
       setSearchTerm(term);
       if(term) {

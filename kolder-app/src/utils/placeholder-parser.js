@@ -1,5 +1,15 @@
 import { scanForPlaceholders } from './placeholder-scanner';
 
+/**
+ * Recursively parses a string to find all placeholders and adds them to the provided placeholders object.
+ * This function is not exported and is only used by `parsePlaceholders`.
+ * @param {string} content - The string to parse.
+ * @param {object} placeholders - The object to store the found placeholders.
+ * @param {Set<string>} placeholders.text - A set of text placeholders.
+ * @param {Set<string>} placeholders.date - A set of date placeholders.
+ * @param {Array<object>} placeholders.choice - An array of choice placeholders.
+ * @private
+ */
 const _recursiveParse = (content, placeholders) => {
     if (!content) {
         return;
@@ -26,6 +36,16 @@ const _recursiveParse = (content, placeholders) => {
     }
 };
 
+/**
+ * Parses a string to find all placeholders.
+ * Placeholders are defined by the syntax `[[placeholder]]`.
+ * There are three types of placeholders:
+ * - Text: `[[name]]`
+ * - Date: `[[date:name]]`
+ * - Choice: `[[select:name:displayType:option1:option2]]`
+ * @param {string} content - The string to parse.
+ * @returns {{text: Array<string>, date: Array<string>, choice: Array<object>}} An object containing the found placeholders.
+ */
 export const parsePlaceholders = (content) => {
     const placeholders = {
         text: new Set(),

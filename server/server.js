@@ -30,7 +30,12 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
 
 // --- API Endpoints ---
 
-// Helper to build category tree for the frontend from a flat list
+/**
+ * Recursively builds a tree structure from a flat list of categories.
+ * @param {Array<Category>} categories - The flat list of categories from the database.
+ * @param {mongoose.Schema.Types.ObjectId | null} parentId - The ID of the parent category to find children for.
+ * @returns {Array<Category>} A tree of categories, where each category object has a `children` property.
+ */
 const buildTree = (categories, parentId = null) => {
     const tree = [];
     categories
@@ -54,6 +59,13 @@ const buildTree = (categories, parentId = null) => {
 };
 
 // Categories
+
+/**
+ * @route GET /api/categories
+ * @description Get all categories as a tree structure.
+ * @returns {Array<Category>} 200 - A tree of categories.
+ * @returns {object} 500 - An error object.
+ */
 app.get('/api/categories', async (req, res) => {
     try {
         const flatCategories = await Category.find();
@@ -62,6 +74,15 @@ app.get('/api/categories', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+/**
+ * @route POST /api/categories
+ * @description Create a new category.
+ * @param {object} req.body - The category to create.
+ * @param {string} req.body.name - The name of the category.
+ * @param {string} [req.body.parentId] - The ID of the parent category.
+ * @returns {Category} 201 - The newly created category.
+ * @returns {object} 500 - An error object.
+ */
 app.post('/api/categories', async (req, res) => {
     try {
         const { name, parentId } = req.body;
@@ -71,6 +92,18 @@ app.post('/api/categories', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+/**
+ * @route PUT /api/categories/:id
+ * @description Update a category.
+ * @param {string} req.params.id - The ID of the category to update.
+ * @param {object} req.body - The fields to update.
+ * @param {string} [req.body.name] - The new name of the category.
+ * @param {string} [req.body.parentId] - The new parent ID of the category.
+ * @returns {Category} 200 - The updated category.
+ * @returns {object} 400 - An error object if the update creates a circular dependency.
+ * @returns {object} 404 - An error object if the category is not found.
+ * @returns {object} 500 - An error object.
+ */
 app.put('/api/categories/:id', async (req, res) => {
     try {
         const { name, parentId } = req.body;
@@ -107,6 +140,14 @@ app.put('/api/categories/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+/**
+ * @route DELETE /api/categories/:id
+ * @description Delete a category and all its descendants and associated snippets.
+ * @param {string} req.params.id - The ID of the category to delete.
+ * @returns {void} 204 - No content.
+ * @returns {object} 404 - An error object if the category is not found.
+ * @returns {object} 500 - An error object.
+ */
 app.delete('/api/categories/:id', async (req, res) => {
     try {
         const category = await Category.findById(req.params.id);
@@ -129,6 +170,13 @@ app.delete('/api/categories/:id', async (req, res) => {
 
 
 // Snippets
+
+/**
+ * @route GET /api/snippets
+ * @description Get all snippets.
+ * @returns {Array<Snippet>} 200 - A list of all snippets.
+ * @returns {object} 500 - An error object.
+ */
 app.get('/api/snippets', async (req, res) => {
     try {
         const snippets = await Snippet.find();
@@ -136,6 +184,13 @@ app.get('/api/snippets', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+/**
+ * @route POST /api/snippets
+ * @description Create a new snippet.
+ * @param {object} req.body - The snippet to create.
+ * @returns {Snippet} 201 - The newly created snippet.
+ * @returns {object} 500 - An error object.
+ */
 app.post('/api/snippets', async (req, res) => {
     try {
         const newSnippet = new Snippet(req.body);
@@ -144,6 +199,14 @@ app.post('/api/snippets', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+/**
+ * @route PUT /api/snippets/:id
+ * @description Update a snippet.
+ * @param {string} req.params.id - The ID of the snippet to update.
+ * @param {object} req.body - The fields to update.
+ * @returns {Snippet} 200 - The updated snippet.
+ * @returns {object} 500 - An error object.
+ */
 app.put('/api/snippets/:id', async (req, res) => {
     try {
         const updatedSnippet = await Snippet.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -151,6 +214,13 @@ app.put('/api/snippets/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+/**
+ * @route DELETE /api/snippets/:id
+ * @description Delete a snippet.
+ * @param {string} req.params.id - The ID of the snippet to delete.
+ * @returns {void} 204 - No content.
+ * @returns {object} 500 - An error object.
+ */
 app.delete('/api/snippets/:id', async (req, res) => {
     try {
         await Snippet.findByIdAndDelete(req.params.id);
@@ -160,6 +230,13 @@ app.delete('/api/snippets/:id', async (req, res) => {
 
 
 // Settings
+
+/**
+ * @route GET /api/settings
+ * @description Get the application settings.
+ * @returns {Settings} 200 - The application settings.
+ * @returns {object} 500 - An error object.
+ */
 app.get('/api/settings', async (req, res) => {
     try {
         let settings = await Settings.findOne();
@@ -170,6 +247,13 @@ app.get('/api/settings', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+/**
+ * @route PUT /api/settings
+ * @description Update the application settings.
+ * @param {object} req.body - The new settings.
+ * @returns {Settings} 200 - The updated settings.
+ * @returns {object} 500 - An error object.
+ */
 app.put('/api/settings', async (req, res) => {
     try {
         // Use findOneAndUpdate with upsert to create the document if it doesn't exist.
@@ -180,6 +264,14 @@ app.put('/api/settings', async (req, res) => {
 
 
 // Analytics
+
+/**
+ * @route POST /api/snippets/:id/track
+ * @description Increment the use count of a snippet.
+ * @param {string} req.params.id - The ID of the snippet to track.
+ * @returns {Snippet} 200 - The updated snippet.
+ * @returns {object} 500 - An error object.
+ */
 app.post('/api/snippets/:id/track', async (req, res) => {
     try {
         const snippet = await Snippet.findByIdAndUpdate(req.params.id, { $inc: { useCount: 1 } }, { new: true });
@@ -187,6 +279,12 @@ app.post('/api/snippets/:id/track', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+/**
+ * @route POST /api/analytics/reset
+ * @description Reset the use count of all snippets to 0.
+ * @returns {Array<Snippet>} 200 - The updated list of all snippets.
+ * @returns {object} 500 - An error object.
+ */
 app.post('/api/analytics/reset', async (req, res) => {
     try {
         await Snippet.updateMany({}, { useCount: 0 });
@@ -196,6 +294,13 @@ app.post('/api/analytics/reset', async (req, res) => {
 });
 
 // --- API Endpoints for Starting Snippets ---
+
+/**
+ * @route GET /api/starting-snippets
+ * @description Get all starting snippets.
+ * @returns {Array<StartingSnippet>} 200 - A list of all starting snippets.
+ * @returns {object} 500 - An error object.
+ */
 app.get('/api/starting-snippets', async (req, res) => {
     try {
         const snippets = await StartingSnippet.find();
@@ -203,6 +308,13 @@ app.get('/api/starting-snippets', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+/**
+ * @route POST /api/starting-snippets
+ * @description Create a new starting snippet.
+ * @param {object} req.body - The starting snippet to create.
+ * @returns {StartingSnippet} 201 - The newly created starting snippet.
+ * @returns {object} 500 - An error object.
+ */
 app.post('/api/starting-snippets', async (req, res) => {
     try {
         const newSnippet = new StartingSnippet(req.body);
@@ -211,6 +323,13 @@ app.post('/api/starting-snippets', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+/**
+ * @route DELETE /api/starting-snippets/:id
+ * @description Delete a starting snippet.
+ * @param {string} req.params.id - The ID of the starting snippet to delete.
+ * @returns {void} 204 - No content.
+ * @returns {object} 500 - An error object.
+ */
 app.delete('/api/starting-snippets/:id', async (req, res) => {
     try {
         await StartingSnippet.findByIdAndDelete(req.params.id);

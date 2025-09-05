@@ -1,6 +1,12 @@
 import { Box, Flex, Heading } from '@chakra-ui/react';
 import CategoryTree from '../CategoryTree';
 
+/**
+ * A widget that displays the category tree.
+ * It's a wrapper around the CategoryTree component, providing a consistent layout.
+ * @param {object} props - The component's props, which are passed down to the CategoryTree component.
+ * @returns {JSX.Element} The rendered component.
+ */
 const CategoryTreeWidget = (props) => {
     return (
         <Box borderWidth="1px" borderRadius="lg" p={4} h="100%" display="flex" flexDirection="column">

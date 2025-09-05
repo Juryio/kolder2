@@ -12,6 +12,12 @@ import {
 import { AddIcon, DeleteIcon, EditIcon, ChevronDownIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import { ItemTypes } from '../utils/dnd-types';
 
+/**
+ * A single category in the tree, which can be dragged and dropped.
+ * It recursively renders its children.
+ * @param {object} props - The component's props.
+ * @returns {JSX.Element} The rendered component.
+ */
 const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory, settings, openCategories, onToggleCategory, onMove, onMoveSnippet }) => {
   const ref = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -132,6 +138,13 @@ const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory
   );
 };
 
+/**
+ * A drop zone at the root of the category tree.
+ * Allows users to drag categories to the root level.
+ * @param {object} props - The component's props.
+ * @param {function} props.onMove - Function to call when a category is dropped on the zone.
+ * @returns {JSX.Element} The rendered component.
+ */
 const RootDropZone = ({ onMove }) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: ItemTypes.CATEGORY,
@@ -158,6 +171,12 @@ const RootDropZone = ({ onMove }) => {
   );
 };
 
+/**
+ * The main component for the category tree.
+ * Renders the tree of categories and the root drop zone.
+ * @param {object} props - The component's props.
+ * @returns {JSX.Element} The rendered component.
+ */
 const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, selectedCategory, settings, openCategories, onToggleCategory, onMove, onMoveSnippet }) => {
   return (
     <Box>

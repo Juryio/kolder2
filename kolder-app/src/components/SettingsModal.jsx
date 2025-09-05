@@ -15,6 +15,15 @@ import {
   Heading,
 } from '@chakra-ui/react';
 
+/**
+ * A modal dialog for editing application settings.
+ * @param {object} props - The component's props.
+ * @param {boolean} props.isOpen - Whether the modal is open.
+ * @param {function} props.onClose - Function to call when the modal is closed.
+ * @param {function} props.onSave - Function to call when the user saves the settings. It receives the new settings object as an argument.
+ * @param {object} props.settings - The current application settings.
+ * @returns {JSX.Element} The rendered component.
+ */
 const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
   const [currentSettings, setCurrentSettings] = useState({ title: '', icon: '', theme: { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' } });
 
@@ -28,11 +37,19 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
     }
   }, [settings, isOpen]);
 
+  /**
+   * Handles changes to the main settings fields (title, icon).
+   * @param {React.ChangeEvent<HTMLInputElement>} e - The change event.
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setCurrentSettings(prev => ({ ...prev, [name]: value }));
   };
 
+  /**
+   * Handles changes to the theme color fields.
+   * @param {React.ChangeEvent<HTMLInputElement>} e - The change event.
+   */
   const handleThemeChange = (e) => {
     const { name, value } = e.target;
     setCurrentSettings(prev => ({
@@ -44,6 +61,10 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
     }));
   }
 
+  /**
+   * Handles the click on the "Save" button.
+   * Calls the onSave prop and closes the modal.
+   */
   const handleSave = () => {
     onSave(currentSettings);
     onClose();
