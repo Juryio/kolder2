@@ -34,3 +34,8 @@
     background-color: #4A5568;
     border-color: #718096 !important;
 }
+
+.ql-editor {
+    height: 300px;
+    overflow-y: auto;
+}
