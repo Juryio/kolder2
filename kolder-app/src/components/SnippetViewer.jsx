@@ -26,7 +26,11 @@ const api = axios.create({
     baseURL: '/api',
 });
 
-// A new sub-component to manage the date variables UI in the viewer
+/**
+ * A sub-component to manage the UI for date placeholders.
+ * @param {object} props - The component's props.
+ * @returns {JSX.Element | null} The rendered component.
+ */
 const DateManager = ({ dateVars, dateValues, onDateChange }) => {
     if (!dateVars || dateVars.length === 0) {
         return null;
@@ -51,6 +55,11 @@ const DateManager = ({ dateVars, dateValues, onDateChange }) => {
     );
 };
 
+/**
+ * A sub-component to manage the UI for choice placeholders.
+ * @param {object} props - The component's props.
+ * @returns {JSX.Element | null} The rendered component.
+ */
 const ChoiceManager = ({ choices, choiceValues, onChoiceChange }) => {
     if (!choices || choices.length === 0) {
         return null;
@@ -79,6 +88,14 @@ const ChoiceManager = ({ choices, choiceValues, onChoiceChange }) => {
     );
 };
 
+/**
+ * A component for viewing a snippet, filling in its placeholders, and copying the result.
+ * @param {object} props - The component's props.
+ * @param {object} props.snippet - The snippet to view.
+ * @param {function} props.onBack - Function to call to return to the list view.
+ * @param {object} props.settings - The application settings, used for theming.
+ * @returns {JSX.Element} The rendered component.
+ */
 const SnippetViewer = ({ snippet, onBack, settings }) => {
   const [parsedPlaceholders, setParsedPlaceholders] = useState({ text: [], date: [], choice: [] });
   const [placeholders, setPlaceholders] = useState({});
@@ -119,6 +136,11 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
     setPrefix(''); // Reset prefix when snippet changes
   }, [snippet]);
 
+  /**
+   * Handles changes to date placeholder values.
+   * @param {string} variableName - The name of the date variable.
+   * @param {Date | null} date - The new date value.
+   */
   const handleDateChange = (variableName, date) => {
     setViewerDateValues(prev => ({
       ...prev,
@@ -126,6 +148,11 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
     }));
   };
 
+  /**
+   * Handles changes to choice placeholder values.
+   * @param {string} variableName - The name of the choice variable.
+   * @param {string} value - The new selected value.
+   */
   const handleChoiceChange = (variableName, value) => {
     setChoiceValues(prev => ({
         ...prev,
@@ -148,6 +175,10 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
     }
   }, [prefix, placeholders, snippet, viewerDateValues, choiceValues]);
 
+  /**
+   * Handles copying the rendered output to the clipboard.
+   * Also tracks the usage of the snippet.
+   */
   const handleCopy = () => {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = output;
@@ -179,10 +210,19 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
     api.post(`/snippets/${snippet._id}/track`).catch(err => console.error("Failed to track copy", err));
   }
 
+  /**
+   * Handles changes to text placeholder values.
+   * @param {string} key - The name of the text placeholder.
+   * @param {string} value - The new value.
+   */
   const handlePlaceholderChange = (key, value) => {
     setPlaceholders(prev => ({ ...prev, [key]: value }));
   };
 
+  /**
+   * Handles the selection of a starting snippet.
+   * @param {React.ChangeEvent<HTMLSelectElement>} e - The change event.
+   */
   const handleStartingSnippetChange = (e) => {
     const snippetId = e.target.value;
     if (!snippetId) {

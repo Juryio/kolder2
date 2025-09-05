@@ -13,6 +13,13 @@ import {
 import { AddIcon, DeleteIcon, EditIcon } from '@chakra-ui/icons';
 import SnippetEditor from './SnippetEditor';
 
+/**
+ * Recursively finds the path of a category by its ID.
+ * @param {string} id - The ID of the category to find.
+ * @param {Array<object>} categories - The list of categories to search in.
+ * @param {Array<string>} path - The current path.
+ * @returns {string | null} The path of the category, or null if not found.
+ */
 const getCategoryPath = (id, categories, path = []) => {
     for (const category of categories) {
         const newPath = [...path, category.name];
@@ -27,6 +34,11 @@ const getCategoryPath = (id, categories, path = []) => {
     return null;
 };
 
+/**
+ * A single snippet item in the list, which can be dragged.
+ * @param {object} props - The component's props.
+ * @returns {JSX.Element} The rendered component.
+ */
 const DraggableSnippetItem = ({ snippet, categories, onSelectSnippet, onEdit, onDelete, settings, isSearching }) => {
     const ref = useRef(null);
     const [{ isDragging }, drag] = useDrag(() => ({
@@ -69,20 +81,36 @@ const DraggableSnippetItem = ({ snippet, categories, onSelectSnippet, onEdit, on
     );
 }
 
+/**
+ * A component that displays a list of snippets.
+ * @param {object} props - The component's props.
+ * @returns {JSX.Element} The rendered component.
+ */
 const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, onEdit, onDelete, onSelectSnippet, settings }) => {
   const [editingSnippet, setEditingSnippet] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
 
+  /**
+   * Handles the click on the "New Snippet" button.
+   */
   const handleNew = () => {
     setEditingSnippet(null);
     setIsEditing(true);
   };
 
+  /**
+   * Handles the click on the "Edit" button for a snippet.
+   * @param {object} snippet - The snippet to edit.
+   */
   const handleEdit = (snippet) => {
     setEditingSnippet(snippet);
     setIsEditing(true);
   };
 
+  /**
+   * Handles saving a new or edited snippet.
+   * @param {object} snippet - The snippet to save.
+   */
   const handleSave = (snippet) => {
     if (snippet._id) {
       onEdit(snippet);
@@ -92,6 +120,9 @@ const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, 
     setIsEditing(false);
   };
 
+  /**
+   * Handles canceling the editing of a snippet.
+   */
   const handleCancel = () => {
     setIsEditing(false);
   };

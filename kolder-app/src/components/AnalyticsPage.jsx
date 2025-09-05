@@ -19,12 +19,25 @@ const api = axios.create({
     baseURL: 'http://localhost:3001/api',
 });
 
+/**
+ * A page that displays analytics about snippet usage.
+ * @param {object} props - The component's props.
+ * @param {function} props.onBack - Function to call to return to the main view.
+ * @param {Array<object>} props.snippets - The list of snippets.
+ * @param {function} props.setSnippets - Function to update the list of snippets.
+ * @param {object} props.settings - The application settings, used for theming.
+ * @returns {JSX.Element} The rendered component.
+ */
 const AnalyticsPage = ({ onBack, snippets, setSnippets, settings }) => {
     const toast = useToast();
     const sortedSnippets = [...snippets].sort((a, b) => b.useCount - a.useCount);
 
     const totalUses = snippets.reduce((acc, snippet) => acc + snippet.useCount, 0);
 
+    /**
+     * Handles the click on the "Reset All Analytics" button.
+     * Sends a request to the server to reset the use count of all snippets.
+     */
     const handleReset = async () => {
         try {
             const response = await api.post('/analytics/reset');

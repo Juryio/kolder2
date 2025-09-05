@@ -20,6 +20,14 @@ import {
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 
+/**
+ * A modal dialog for building placeholder strings.
+ * @param {object} props - The component's props.
+ * @param {boolean} props.isOpen - Whether the modal is open.
+ * @param {function} props.onClose - Function to call when the modal is closed.
+ * @param {function} props.onInsert - Function to call when the user inserts a placeholder. It receives the placeholder string as an argument.
+ * @returns {JSX.Element} The rendered component.
+ */
 const PlaceholderBuilderModal = ({ isOpen, onClose, onInsert }) => {
   const [type, setType] = useState('text'); // 'text', 'date', 'choice'
   const [name, setName] = useState('');
@@ -36,6 +44,10 @@ const PlaceholderBuilderModal = ({ isOpen, onClose, onInsert }) => {
     }
   }, [isOpen]);
 
+  /**
+   * Handles the click on the "Insert" button.
+   * Builds the placeholder string and calls the onInsert prop.
+   */
   const handleInsert = () => {
     if (!name.trim()) {
         // Basic validation
@@ -70,6 +82,10 @@ const PlaceholderBuilderModal = ({ isOpen, onClose, onInsert }) => {
     onClose();
   };
 
+  /**
+   * Renders the configuration UI for the selected placeholder type.
+   * @returns {JSX.Element | null} The UI for configuring the placeholder.
+   */
   const renderConfigUI = () => {
     switch (type) {
       case 'text':
@@ -128,16 +144,28 @@ const PlaceholderBuilderModal = ({ isOpen, onClose, onInsert }) => {
     }
   };
 
+  /**
+   * Handles changes to the choice options.
+   * @param {number} index - The index of the option to change.
+   * @param {string} value - The new value of the option.
+   */
   const handleOptionChange = (index, value) => {
     const newOptions = [...options];
     newOptions[index] = value;
     setOptions(newOptions);
   };
 
+  /**
+   * Adds a new empty option for a choice placeholder.
+   */
   const addOption = () => {
     setOptions([...options, '']);
   };
 
+  /**
+   * Removes an option for a choice placeholder.
+   * @param {number} index - The index of the option to remove.
+   */
   const removeOption = (index) => {
     if (options.length > 1) {
       const newOptions = options.filter((_, i) => i !== index);

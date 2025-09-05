@@ -1,5 +1,12 @@
 import { add, sub, format } from 'date-fns';
 
+/**
+ * Finds the matching closing `}}` for an opening `{{` accounting for nested placeholders.
+ * @param {string} content - The string to search within.
+ * @param {number} start - The starting index after the initial `{{`.
+ * @returns {number} The index of the matching `}}` or -1 if not found.
+ * @private
+ */
 const findMatchingBrackets = (content, start) => {
     let depth = 1;
     for (let i = start; i < content.length - 1; i++) {
@@ -17,6 +24,14 @@ const findMatchingBrackets = (content, start) => {
     return -1; // Not found
 };
 
+/**
+ * Evaluates a single placeholder expression and returns the corresponding value.
+ * Handles text, date, and choice placeholders.
+ * @param {string} expression - The placeholder expression (the content between `{{` and `}}`).
+ * @param {object} values - The object containing the placeholder values.
+ * @returns {string} The evaluated value of the placeholder.
+ * @private
+ */
 const evaluateExpression = (expression, values) => {
     expression = expression.trim();
 
@@ -67,6 +82,16 @@ const evaluateExpression = (expression, values) => {
     return values.text?.[expression] || '';
 };
 
+/**
+ * Renders a string containing placeholders with the provided values.
+ * Placeholders are defined by the syntax `{{placeholder}}`.
+ * @param {string} content - The string to render.
+ * @param {object} values - The object containing the placeholder values.
+ * @param {object} values.text - An object mapping text placeholder names to their values.
+ * @param {object} values.date - An object mapping date placeholder names to their values.
+ * @param {object} values.choice - An object mapping choice placeholder names to their selected option's value.
+ * @returns {string} The rendered string with placeholders replaced by their values.
+ */
 export const renderPlaceholders = (content, values) => {
     if (!content) {
         return '';

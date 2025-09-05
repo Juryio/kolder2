@@ -1,3 +1,10 @@
+/**
+ * Scans a string for placeholders and returns an array of the expressions found within them.
+ * This function correctly handles nested placeholders, only returning the top-level ones.
+ * For example, in `{{select:name:{{a}}:{{b}}}}`, it will return `['select:name:{{a}}:{{b}}']`.
+ * @param {string} content - The string to scan for placeholders.
+ * @returns {Array<string>} An array of placeholder expressions.
+ */
 export const scanForPlaceholders = (content) => {
     const placeholders = [];
     let currentIndex = 0;
