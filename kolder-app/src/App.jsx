@@ -11,7 +11,7 @@ import {
   IconButton,
   Image,
 } from '@chakra-ui/react';
-import { SettingsIcon, ViewIcon, AddIcon } from '@chakra-ui/icons';
+import { SettingsIcon, ViewIcon, AddIcon, CalendarIcon } from '@chakra-ui/icons';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import CategoryTreeWidget from './components/widgets/CategoryTreeWidget';
@@ -21,6 +21,7 @@ import AddCategoryModal from './components/AddCategoryModal';
 import SettingsModal from './components/SettingsModal';
 import AnalyticsPage from './components/AnalyticsPage';
 import StartingSnippetManager from './components/StartingSnippetManager';
+import CalendarModal from './components/CalendarModal';
 
 const api = axios.create({
   baseURL: '/api',
@@ -108,6 +109,7 @@ function App() {
   const [settings, setSettings] = useState(null);
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
   const { isOpen: isStartingSnippetOpen, onOpen: onStartingSnippetOpen, onClose: onStartingSnippetClose } = useDisclosure();
+  const { isOpen: isCalendarOpen, onOpen: onCalendarOpen, onClose: onCalendarClose } = useDisclosure();
   const [openCategories, setOpenCategories] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [currentView, setCurrentView] = useState('main'); // 'main' or 'analytics'
@@ -395,6 +397,13 @@ function App() {
             bg={settings?.theme.accentColor}
         />
         <IconButton
+            onClick={onCalendarOpen}
+            icon={<CalendarIcon />}
+            aria-label="Open Calendar"
+            mr={2}
+            bg={settings?.theme.accentColor}
+        />
+        <IconButton
             onClick={onSettingsOpen}
             icon={<SettingsIcon />}
             aria-label="Settings"
@@ -418,6 +427,11 @@ function App() {
       <StartingSnippetManager
         isOpen={isStartingSnippetOpen}
         onClose={onStartingSnippetClose}
+        settings={settings}
+      />
+      <CalendarModal
+        isOpen={isCalendarOpen}
+        onClose={onCalendarClose}
         settings={settings}
       />
     </Flex>
