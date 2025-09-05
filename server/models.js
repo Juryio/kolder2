@@ -1,11 +1,32 @@
 const mongoose = require('mongoose');
 
+/**
+ * @typedef {object} Category
+ * @property {string} name - The name of the category.
+ * @property {mongoose.Schema.Types.ObjectId | null} parentId - The ID of the parent category. Null for top-level categories.
+ */
+
+/**
+ * Mongoose schema for categories.
+ * @type {mongoose.Schema<Category>}
+ */
 const categorySchema = new mongoose.Schema({
     name: { type: String, required: true },
-    // A null parentId indicates a top-level category
     parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
 });
 
+/**
+ * @typedef {object} Snippet
+ * @property {mongoose.Schema.Types.ObjectId} categoryId - The ID of the category this snippet belongs to.
+ * @property {string} name - The name of the snippet.
+ * @property {string} content - The content of the snippet.
+ * @property {number} useCount - The number of times the snippet has been used.
+ */
+
+/**
+ * Mongoose schema for snippets.
+ * @type {mongoose.Schema<Snippet>}
+ */
 const snippetSchema = new mongoose.Schema({
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
     name: { type: String, required: true },
@@ -13,6 +34,25 @@ const snippetSchema = new mongoose.Schema({
     useCount: { type: Number, default: 0 }
 });
 
+/**
+ * @typedef {object} Theme
+ * @property {string} backgroundColor - The background color of the application.
+ * @property {string} contentBackgroundColor - The background color of content areas.
+ * @property {string} textColor - The text color.
+ * @property {string} accentColor - The accent color.
+ */
+
+/**
+ * @typedef {object} Settings
+ * @property {string} title - The title of the application.
+ * @property {string} icon - The URL of the application icon.
+ * @property {Theme} theme - The color theme of the application.
+ */
+
+/**
+ * Mongoose schema for application settings.
+ * @type {mongoose.Schema<Settings>}
+ */
 const settingsSchema = new mongoose.Schema({
     title: { type: String, default: 'Kolder' },
     icon: { type: String, default: '' },
@@ -24,7 +64,17 @@ const settingsSchema = new mongoose.Schema({
     }
 });
 
-const startingSnippetSchema = new mongoose.Schema({
+/**
+ * @typedef {object} StartingSnippet
+ * @property {string} name - The name of the starting snippet.
+ * @property {string} content - The content of the starting snippet.
+ */
+
+/**
+ * Mongoose schema for starting snippets.
+ * @type {mongoose.Schema<StartingSnippet>}
+ */
+const startingSnippetSchema = new mongoose.schema({
     name: { type: String, required: true },
     content: { type: String, required: true },
 });
