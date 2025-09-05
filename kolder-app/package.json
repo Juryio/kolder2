@@ -27,7 +27,6 @@
     "react-quill": "^2.0.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
-    "react-grid-layout": "^1.4.4",
     "react-calendar": "^5.0.0"
   },
   "devDependencies": {

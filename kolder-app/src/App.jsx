@@ -14,7 +14,6 @@ import {
 import { SettingsIcon, ViewIcon, AddIcon } from '@chakra-ui/icons';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import GridLayout from 'react-grid-layout';
 import CategoryTreeWidget from './components/widgets/CategoryTreeWidget';
 import SnippetListWidget from './components/widgets/SnippetListWidget';
 import SnippetViewer from './components/SnippetViewer';
@@ -50,14 +49,9 @@ const MainView = ({
     onMoveCategory,
     onMoveSnippet,
 }) => {
-    const layout = [
-        { i: 'categories', x: 0, y: 0, w: 3, h: 10 },
-        { i: 'snippets', x: 3, y: 0, w: 9, h: 10 },
-    ];
-
     return (
-        <GridLayout className="layout" layout={layout} cols={12} rowHeight={30} width={1200} draggableHandle=".drag-handle">
-            <div key="categories">
+        <Flex w="100%" p="4" flex="1">
+            <Box flex="3" mr="4">
                 <CategoryTreeWidget
                     settings={settings}
                     categories={categories}
@@ -71,8 +65,8 @@ const MainView = ({
                     onMove={onMoveCategory}
                     onMoveSnippet={onMoveSnippet}
                 />
-            </div>
-            <div key="snippets">
+            </Box>
+            <Box flex="9">
                 {selectedSnippet ? (
                     <SnippetViewer snippet={selectedSnippet} onBack={onBackToList} settings={settings} />
                 ) : (
@@ -88,8 +82,8 @@ const MainView = ({
                         settings={settings}
                     />
                 )}
-            </div>
-        </GridLayout>
+            </Box>
+        </Flex>
     );
 };
 
