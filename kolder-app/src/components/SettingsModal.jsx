@@ -118,7 +118,7 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
           <Button bg={currentSettings.theme.accentColor} mr={3} onClick={handleSave}>
             Save
           </Button>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>Cancel</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

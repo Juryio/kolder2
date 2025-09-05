@@ -65,7 +65,7 @@ const AddCategoryModal = ({ isOpen, onClose, onAdd, settings }) => {
           >
             Save
           </Button>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>Cancel</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
