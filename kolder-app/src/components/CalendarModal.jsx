@@ -43,45 +43,34 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
     });
   };
 
-  const handleRightClick = (day, event) => {
-    event.preventDefault();
-    const formattedDate = format(day, 'dd.MM.yyyy');
-    navigator.clipboard.writeText(formattedDate).then(() => {
-      toast({
-        title: 'Date Copied!',
-        description: `${formattedDate} has been copied to your clipboard.`,
-        status: 'success',
-        duration: 2000,
-        isClosable: true,
+  const handleDayClick = (day, event) => {
+    // Check if the click was a right-click
+    if (event.nativeEvent.button === 2) {
+      event.preventDefault();
+      const formattedDate = format(day, 'dd.MM.yyyy');
+      navigator.clipboard.writeText(formattedDate).then(() => {
+        console.log('Date copied to clipboard:', formattedDate);
+        toast({
+          title: 'Date Copied!',
+          description: `${formattedDate} has been copied to your clipboard.`,
+          status: 'success',
+          duration: 2000,
+          isClosable: true,
+        });
+      }, (err) => {
+        toast({
+          title: 'Error',
+          description: 'Could not copy date.',
+          status: 'error',
+          duration: 2000,
+          isClosable: true,
+        });
+        console.error('Could not copy text: ', err);
       });
-    }, (err) => {
-      toast({
-        title: 'Error',
-        description: 'Could not copy date.',
-        status: 'error',
-        duration: 2000,
-        isClosable: true,
-      });
-      console.error('Could not copy text: ', err);
-    });
-  };
-
-  const renderTileContent = ({ date, view }) => {
-    // Add the right-click handler only on month view
-    if (view === 'month') {
-      return (
-        <Box
-          position="absolute"
-          top="0"
-          left="0"
-          right="0"
-          bottom="0"
-          onContextMenu={(e) => handleRightClick(date, e)}
-          title="Right-click to copy date"
-        />
-      );
+    } else {
+      // It's a left-click, so update the date
+      setDate(day);
     }
-    return null;
   };
 
   return (
@@ -94,10 +83,9 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
           <VStack>
             <Box border="1px" borderColor="gray.600" borderRadius="md">
               <Calendar
-                onChange={setDate}
+                onClickDay={handleDayClick}
                 value={date}
                 locale="de-DE"
-                tileContent={renderTileContent}
               />
             </Box>
           </VStack>
