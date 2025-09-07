@@ -25,13 +25,16 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
     const textArea = document.createElement('textarea');
     textArea.value = text;
 
-    // Avoid scrolling to bottom
-    textArea.style.top = '0';
-    textArea.style.left = '0';
-    textArea.style.position = 'fixed';
+    // Make the textarea non-editable and move it off-screen
+    textArea.setAttribute('readonly', '');
+    textArea.style.position = 'absolute';
+    textArea.style.left = '-9999px';
 
     document.body.appendChild(textArea);
-    textArea.focus();
+
+    // Save the current selection
+    const selected = document.getSelection().rangeCount > 0 ? document.getSelection().getRangeAt(0) : false;
+
     textArea.select();
 
     try {
@@ -65,6 +68,12 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
     }
 
     document.body.removeChild(textArea);
+
+    // Restore the original selection
+    if (selected) {
+      document.getSelection().removeAllRanges();
+      document.getSelection().addRange(selected);
+    }
   }, [toast]);
 
   const handleCopy = () => {
