@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -43,42 +43,9 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
     });
   };
 
-  const handleDayClick = (day, event) => {
-    // Check if the click was a right-click
-    if (event.nativeEvent.button === 2) {
-      event.preventDefault();
-      const formattedDate = format(day, 'dd.MM.yyyy');
+  const calendarRef = useRef(null);
 
-      // Use the new clipboard fallback
-      if (!navigator.clipboard) {
-        fallbackCopyTextToClipboard(formattedDate);
-        return;
-      }
-      navigator.clipboard.writeText(formattedDate).then(() => {
-        toast({
-          title: 'Date Copied!',
-          description: `${formattedDate} has been copied to your clipboard.`,
-          status: 'success',
-          duration: 2000,
-          isClosable: true,
-        });
-      }, (err) => {
-        toast({
-          title: 'Error',
-          description: 'Could not copy date.',
-          status: 'error',
-          duration: 2000,
-          isClosable: true,
-        });
-        console.error('Could not copy text: ', err);
-      });
-    } else {
-      // It's a left-click, so update the date
-      setDate(day);
-    }
-  };
-
-  const fallbackCopyTextToClipboard = (text) => {
+  const fallbackCopyTextToClipboard = useCallback((text) => {
     const textArea = document.createElement('textarea');
     textArea.value = text;
 
@@ -122,7 +89,57 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
     }
 
     document.body.removeChild(textArea);
-  }
+  }, [toast]);
+
+  useEffect(() => {
+    const calendarDiv = calendarRef.current;
+    if (!calendarDiv) return;
+
+    const handleContextMenu = (event) => {
+      const tile = event.target.closest('.react-calendar__tile');
+      if (!tile) return;
+
+      event.preventDefault();
+
+      const dayAbbr = tile.querySelector('abbr');
+      if (!dayAbbr) return;
+
+      const ariaLabel = dayAbbr.getAttribute('aria-label');
+      if (!ariaLabel) return;
+
+      const date = new Date(ariaLabel);
+      const formattedDate = format(date, 'dd.MM.yyyy');
+
+      if (!navigator.clipboard) {
+        fallbackCopyTextToClipboard(formattedDate);
+      } else {
+        navigator.clipboard.writeText(formattedDate).then(() => {
+          toast({
+            title: 'Date Copied!',
+            description: `${formattedDate} has been copied to your clipboard.`,
+            status: 'success',
+            duration: 2000,
+            isClosable: true,
+          });
+        }, (err) => {
+          toast({
+            title: 'Error',
+            description: 'Could not copy date.',
+            status: 'error',
+            duration: 2000,
+            isClosable: true,
+          });
+          console.error('Could not copy text: ', err);
+        });
+      }
+    };
+
+    calendarDiv.addEventListener('contextmenu', handleContextMenu);
+
+    return () => {
+      calendarDiv.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, [toast, fallbackCopyTextToClipboard]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
@@ -132,9 +149,9 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
         <ModalCloseButton />
         <ModalBody>
           <VStack>
-            <Box border="1px" borderColor="gray.600" borderRadius="md">
+            <Box ref={calendarRef} border="1px" borderColor="gray.600" borderRadius="md">
               <Calendar
-                onClickDay={handleDayClick}
+                onChange={setDate}
                 value={date}
                 locale="de-DE"
               />
