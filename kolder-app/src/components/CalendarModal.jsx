@@ -48,8 +48,13 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
     if (event.nativeEvent.button === 2) {
       event.preventDefault();
       const formattedDate = format(day, 'dd.MM.yyyy');
+
+      // Use the new clipboard fallback
+      if (!navigator.clipboard) {
+        fallbackCopyTextToClipboard(formattedDate);
+        return;
+      }
       navigator.clipboard.writeText(formattedDate).then(() => {
-        console.log('Date copied to clipboard:', formattedDate);
         toast({
           title: 'Date Copied!',
           description: `${formattedDate} has been copied to your clipboard.`,
@@ -72,6 +77,52 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
       setDate(day);
     }
   };
+
+  const fallbackCopyTextToClipboard = (text) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+
+    // Avoid scrolling to bottom
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.position = 'fixed';
+
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        toast({
+          title: 'Date Copied!',
+          description: `${text} has been copied to your clipboard.`,
+          status: 'success',
+          duration: 2000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Could not copy date.',
+          status: 'error',
+          duration: 2000,
+          isClosable: true,
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Could not copy date.',
+        status: 'error',
+        duration: 2000,
+        isClosable: true,
+      });
+      console.error('Fallback: Oops, unable to copy', err);
+    }
+
+    document.body.removeChild(textArea);
+  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
