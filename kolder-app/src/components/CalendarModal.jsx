@@ -21,56 +21,38 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
   const [date, setDate] = useState(new Date());
   const toast = useToast();
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     const formattedDate = format(date, 'dd.MM.yyyy');
 
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(formattedDate).then(() => {
-        toast({
-          title: 'Date Copied!',
-          description: `${formattedDate} has been copied to your clipboard.`,
-          status: 'success',
-          duration: 2000,
-          isClosable: true,
-        });
-      }, (err) => {
-        toast({
-          title: 'Error',
-          description: 'Could not copy date.',
-          status: 'error',
-          duration: 2000,
-          isClosable: true,
-        });
-        console.error('Could not copy text: ', err);
+    if (!navigator.clipboard || !window.isSecureContext) {
+      toast({
+        title: 'Error',
+        description: 'Cannot copy date. This feature requires a secure context (HTTPS or localhost).',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
       });
-    } else {
-      const textArea = document.createElement("textarea");
-      textArea.value = formattedDate;
-      textArea.style.position = "fixed";
-      textArea.style.left = "-9999px";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      try {
-        document.execCommand('copy');
-        toast({
-          title: 'Date Copied!',
-          description: `${formattedDate} has been copied to your clipboard.`,
-          status: 'success',
-          duration: 2000,
-          isClosable: true,
-        });
-      } catch (err) {
-        toast({
-          title: 'Error',
-          description: 'Could not copy date.',
-          status: 'error',
-          duration: 2000,
-          isClosable: true,
-        });
-        console.error('Fallback: Oops, unable to copy', err);
-      }
-      document.body.removeChild(textArea);
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(formattedDate);
+      toast({
+        title: 'Date Copied!',
+        description: `${formattedDate} has been copied to your clipboard.`,
+        status: 'success',
+        duration: 2000,
+        isClosable: true,
+      });
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Could not copy date. Please ensure you have granted clipboard permissions.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      console.error('Could not copy text: ', err);
     }
   };
 
