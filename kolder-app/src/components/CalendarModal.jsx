@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useRef } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -11,49 +11,37 @@ import {
   VStack,
   useToast,
   Box,
+  Input,
+  InputGroup,
+  InputRightElement,
 } from '@chakra-ui/react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './Calendar.css';
 import { format } from 'date-fns';
+import { enUS } from 'date-fns/locale';
 
 const CalendarModal = ({ isOpen, onClose, settings }) => {
   const [date, setDate] = useState(new Date());
   const toast = useToast();
+  const inputRef = useRef(null);
 
-  const handleCopy = async () => {
-    const formattedDate = format(date, 'dd.MM.yyyy');
+  const formattedDate = format(date, 'dd.MM.yyyy');
 
-    if (!navigator.clipboard || !window.isSecureContext) {
-      toast({
-        title: 'Error',
-        description: 'Cannot copy date. This feature requires a secure context (HTTPS or localhost).',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-      return;
+  const handleInputClick = () => {
+    if (inputRef.current) {
+      inputRef.current.select();
     }
+  };
 
-    try {
-      await navigator.clipboard.writeText(formattedDate);
-      toast({
-        title: 'Date Copied!',
-        description: `${formattedDate} has been copied to your clipboard.`,
-        status: 'success',
-        duration: 2000,
-        isClosable: true,
-      });
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: 'Could not copy date. Please ensure you have granted clipboard permissions.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-      console.error('Could not copy text: ', err);
-    }
+  const handleLargeCalendarClick = () => {
+    toast({
+      title: 'Feature Not Implemented',
+      description: 'The large calendar view is not yet available.',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    });
   };
 
   return (
@@ -63,25 +51,33 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
         <ModalHeader>Calendar</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
-          <VStack>
+          <VStack spacing={4}>
             <Box border="1px" borderColor="gray.600" borderRadius="md">
               <Calendar
                 onChange={setDate}
                 value={date}
-                locale="de-DE"
+                locale="en-US"
               />
             </Box>
+            <InputGroup>
+              <Input
+                ref={inputRef}
+                isReadOnly
+                value={formattedDate}
+                onClick={handleInputClick}
+                textAlign="center"
+                cursor="pointer"
+              />
+            </InputGroup>
           </VStack>
         </ModalBody>
         <ModalFooter>
+          {/* Placeholder for future feature */}
           <Button
-            bgGradient={`linear(to-r, ${settings?.theme.accentColor}, purple.500)`}
-            _hover={{
-                bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`
-            }}
-            onClick={handleCopy}
+            variant="outline"
+            onClick={handleLargeCalendarClick}
           >
-            Copy Selected Date (dd.MM.yyyy)
+            Large Calendar
           </Button>
           <Button ml={3} onClick={onClose}>
             Close
