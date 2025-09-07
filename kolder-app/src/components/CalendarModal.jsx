@@ -22,7 +22,7 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
   const toast = useToast();
 
   const handleCopy = () => {
-    const formattedDate = format(new Date(), 'dd.MM.yyyy');
+    const formattedDate = format(date, 'dd.MM.yyyy');
     navigator.clipboard.writeText(formattedDate).then(() => {
       toast({
         title: 'Date Copied!',
@@ -43,6 +43,47 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
     });
   };
 
+  const handleRightClick = (day, event) => {
+    event.preventDefault();
+    const formattedDate = format(day, 'dd.MM.yyyy');
+    navigator.clipboard.writeText(formattedDate).then(() => {
+      toast({
+        title: 'Date Copied!',
+        description: `${formattedDate} has been copied to your clipboard.`,
+        status: 'success',
+        duration: 2000,
+        isClosable: true,
+      });
+    }, (err) => {
+      toast({
+        title: 'Error',
+        description: 'Could not copy date.',
+        status: 'error',
+        duration: 2000,
+        isClosable: true,
+      });
+      console.error('Could not copy text: ', err);
+    });
+  };
+
+  const renderTileContent = ({ date, view }) => {
+    // Add the right-click handler only on month view
+    if (view === 'month') {
+      return (
+        <Box
+          position="absolute"
+          top="0"
+          left="0"
+          right="0"
+          bottom="0"
+          onContextMenu={(e) => handleRightClick(date, e)}
+          title="Right-click to copy date"
+        />
+      );
+    }
+    return null;
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
@@ -56,6 +97,7 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
                 onChange={setDate}
                 value={date}
                 locale="de-DE"
+                tileContent={renderTileContent}
               />
             </Box>
           </VStack>
@@ -68,7 +110,7 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
             }}
             onClick={handleCopy}
           >
-            Copy Today's Date (dd.MM.yyyy)
+            Copy Selected Date (dd.MM.yyyy)
           </Button>
           <Button ml={3} onClick={onClose}>
             Close
