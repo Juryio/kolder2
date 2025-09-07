@@ -21,66 +21,10 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
   const [date, setDate] = useState(new Date());
   const toast = useToast();
 
-  const fallbackCopyTextToClipboard = useCallback((text) => {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-
-    // Make the textarea non-editable and move it off-screen
-    textArea.setAttribute('readonly', '');
-    textArea.style.position = 'absolute';
-    textArea.style.left = '-9999px';
-
-    document.body.appendChild(textArea);
-
-    // Save the current selection
-    const selected = document.getSelection().rangeCount > 0 ? document.getSelection().getRangeAt(0) : false;
-
-    textArea.select();
-
-    try {
-      const successful = document.execCommand('copy');
-      if (successful) {
-        toast({
-          title: 'Date Copied!',
-          description: `${text} has been copied to your clipboard.`,
-          status: 'success',
-          duration: 2000,
-          isClosable: true,
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: 'Could not copy date.',
-          status: 'error',
-          duration: 2000,
-          isClosable: true,
-        });
-      }
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: 'Could not copy date.',
-        status: 'error',
-        duration: 2000,
-        isClosable: true,
-      });
-      console.error('Fallback: Oops, unable to copy', err);
-    }
-
-    document.body.removeChild(textArea);
-
-    // Restore the original selection
-    if (selected) {
-      document.getSelection().removeAllRanges();
-      document.getSelection().addRange(selected);
-    }
-  }, [toast]);
-
   const handleCopy = () => {
     const formattedDate = format(date, 'dd.MM.yyyy');
-    if (!navigator.clipboard) {
-      fallbackCopyTextToClipboard(formattedDate);
-    } else {
+
+    if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(formattedDate).then(() => {
         toast({
           title: 'Date Copied!',
@@ -99,6 +43,34 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
         });
         console.error('Could not copy text: ', err);
       });
+    } else {
+      const textArea = document.createElement("textarea");
+      textArea.value = formattedDate;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        toast({
+          title: 'Date Copied!',
+          description: `${formattedDate} has been copied to your clipboard.`,
+          status: 'success',
+          duration: 2000,
+          isClosable: true,
+        });
+      } catch (err) {
+        toast({
+          title: 'Error',
+          description: 'Could not copy date.',
+          status: 'error',
+          duration: 2000,
+          isClosable: true,
+        });
+        console.error('Fallback: Oops, unable to copy', err);
+      }
+      document.body.removeChild(textArea);
     }
   };
 
