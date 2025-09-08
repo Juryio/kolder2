@@ -19,7 +19,7 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './Calendar.css';
 import { format } from 'date-fns';
-import { enUS } from 'date-fns/locale';
+import { de } from 'date-fns/locale';
 
 const CalendarModal = ({ isOpen, onClose, settings }) => {
   const [date, setDate] = useState(new Date());
@@ -56,7 +56,7 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
               <Calendar
                 onChange={setDate}
                 value={date}
-                locale="en-US"
+                locale="de-DE"
               />
             </Box>
             <InputGroup>
