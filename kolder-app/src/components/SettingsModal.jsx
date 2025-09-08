@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -13,9 +13,7 @@ import {
   Button,
   VStack,
   Heading,
-  useToast,
 } from '@chakra-ui/react';
-import axios from 'axios';
 
 /**
  * A modal dialog for editing application settings.
@@ -72,59 +70,6 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
     onClose();
   };
 
-  const handleExport = async () => {
-    try {
-      const response = await axios.get('/api/debug/export');
-      const data = JSON.stringify(response.data, null, 2);
-      const blob = new Blob([data], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'kolder-export.json';
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Export failed:', error);
-      toast({
-        title: 'Export Failed',
-        description: 'Could not export data.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const handleImport = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const data = JSON.parse(event.target.result);
-        await axios.post('/api/debug/import', data);
-        toast({
-          title: 'Import Successful',
-          description: 'Data has been imported. Please refresh the page to see the changes.',
-          status: 'success',
-          duration: 5000,
-          isClosable: true,
-        });
-      } catch (error) {
-        console.error('Import failed:', error);
-        toast({
-          title: 'Import Failed',
-          description: 'Could not import data. Please ensure the file is a valid export.',
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
-      }
-    };
-    reader.readAsText(file);
-  };
-
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
@@ -150,34 +95,22 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
                 placeholder="Enter URL for favicon"
               />
             </FormControl>
-            <Heading size="sm" mt={4} alignSelf="flex-start">Data Management</Heading>
-            <Button onClick={handleExport}>Export Data</Button>
-            <Button as="label" htmlFor="import-file">
-              Import Data
-              <Input
-                id="import-file"
-                type="file"
-                accept=".json"
-                onChange={handleImport}
-                display="none"
-              />
-            </Button>
             <Heading size="sm" mt={4} alignSelf="flex-start">Theme Colors</Heading>
              <FormControl>
               <FormLabel>Main Background</FormLabel>
-              <Input name="backgroundColor" value={currentSettings.theme.backgroundColor} onChange={handleThemeChange} />
+              <Input type="color" name="backgroundColor" value={currentSettings.theme.backgroundColor} onChange={handleThemeChange} />
             </FormControl>
             <FormControl>
               <FormLabel>Content Background</FormLabel>
-              <Input name="contentBackgroundColor" value={currentSettings.theme.contentBackgroundColor} onChange={handleThemeChange} />
+              <Input type="color" name="contentBackgroundColor" value={currentSettings.theme.contentBackgroundColor} onChange={handleThemeChange} />
             </FormControl>
             <FormControl>
               <FormLabel>Text Color</FormLabel>
-              <Input name="textColor" value={currentSettings.theme.textColor} onChange={handleThemeChange} />
+              <Input type="color" name="textColor" value={currentSettings.theme.textColor} onChange={handleThemeChange} />
             </FormControl>
             <FormControl>
               <FormLabel>Accent Color</FormLabel>
-              <Input name="accentColor" value={currentSettings.theme.accentColor} onChange={handleThemeChange} />
+              <Input type="color" name="accentColor" value={currentSettings.theme.accentColor} onChange={handleThemeChange} />
             </FormControl>
           </VStack>
         </ModalBody>
