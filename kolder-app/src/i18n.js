@@ -10,8 +10,8 @@ i18n
   .use(HttpApi)
   .use(initReactI18next)
   .init({
-    lng: 'de',
-    fallbackLng: 'de',
+    lng: 'en',
+    fallbackLng: 'en',
     debug: true,
     interpolation: {
       escapeValue: false, // React already does escaping
