@@ -6,12 +6,12 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8448:8448"
+      - "3001:3001"
     depends_on:
       - mongo
     environment:
       - MONGO_URI=mongodb://mongo:27017/kolderdb
-      - PORT=8448
+      - PORT=3001
 
   mongo:
     image: mongo:latest

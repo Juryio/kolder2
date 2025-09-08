@@ -41,7 +41,7 @@ COPY server/ ./server/
 COPY --from=builder-fe /app/kolder-app/dist ./kolder-app/dist
 
 # Expose the port the server runs on
-EXPOSE 8448
+EXPOSE 3001
 
 # Command to run the application
 CMD ["node", "server/server.js"]
