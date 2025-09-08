@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -11,37 +11,67 @@ import {
   VStack,
   useToast,
   Box,
-  Input,
-  InputGroup,
-  InputRightElement,
 } from '@chakra-ui/react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './Calendar.css';
 import { format } from 'date-fns';
-import { de } from 'date-fns/locale';
 
 const CalendarModal = ({ isOpen, onClose, settings }) => {
   const [date, setDate] = useState(new Date());
   const toast = useToast();
-  const inputRef = useRef(null);
 
-  const formattedDate = format(date, 'dd.MM.yyyy');
+  const handleCopy = () => {
+    const formattedDate = format(date, 'dd.MM.yyyy');
 
-  const handleInputClick = () => {
-    if (inputRef.current) {
-      inputRef.current.select();
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(formattedDate).then(() => {
+        toast({
+          title: 'Date Copied!',
+          description: `${formattedDate} has been copied to your clipboard.`,
+          status: 'success',
+          duration: 2000,
+          isClosable: true,
+        });
+      }, (err) => {
+        toast({
+          title: 'Error',
+          description: 'Could not copy date.',
+          status: 'error',
+          duration: 2000,
+          isClosable: true,
+        });
+        console.error('Could not copy text: ', err);
+      });
+    } else {
+      const textArea = document.createElement("textarea");
+      textArea.value = formattedDate;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        toast({
+          title: 'Date Copied!',
+          description: `${formattedDate} has been copied to your clipboard.`,
+          status: 'success',
+          duration: 2000,
+          isClosable: true,
+        });
+      } catch (err) {
+        toast({
+          title: 'Error',
+          description: 'Could not copy date.',
+          status: 'error',
+          duration: 2000,
+          isClosable: true,
+        });
+        console.error('Fallback: Oops, unable to copy', err);
+      }
+      document.body.removeChild(textArea);
     }
-  };
-
-  const handleLargeCalendarClick = () => {
-    toast({
-      title: 'Feature Not Implemented',
-      description: 'The large calendar view is not yet available.',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    });
   };
 
   return (
@@ -51,7 +81,7 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
         <ModalHeader>Calendar</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
-          <VStack spacing={4}>
+          <VStack>
             <Box border="1px" borderColor="gray.600" borderRadius="md">
               <Calendar
                 onChange={setDate}
@@ -59,25 +89,17 @@ const CalendarModal = ({ isOpen, onClose, settings }) => {
                 locale="de-DE"
               />
             </Box>
-            <InputGroup>
-              <Input
-                ref={inputRef}
-                isReadOnly
-                value={formattedDate}
-                onClick={handleInputClick}
-                textAlign="center"
-                cursor="pointer"
-              />
-            </InputGroup>
           </VStack>
         </ModalBody>
         <ModalFooter>
-          {/* Placeholder for future feature */}
           <Button
-            variant="outline"
-            onClick={handleLargeCalendarClick}
+            bgGradient={`linear(to-r, ${settings?.theme.accentColor}, purple.500)`}
+            _hover={{
+                bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`
+            }}
+            onClick={handleCopy}
           >
-            Large Calendar
+            Copy Selected Date (dd.MM.yyyy)
           </Button>
           <Button ml={3} onClick={onClose}>
             Close
