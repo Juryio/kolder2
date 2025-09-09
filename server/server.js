@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const { Category, Snippet, Settings, StartingSnippet } = require('./models');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8448;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/kolderdb';
 
 // --- Middleware ---
@@ -350,6 +350,64 @@ app.post('/api/testing/clear-db', async (req, res) => {
             }
         });
         res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+// --- Debug Endpoints ---
+
+/**
+ * @route GET /api/debug/export
+ * @description Export all data from the database as a single JSON object.
+ * @returns {object} 200 - An object containing all data from the database.
+ * @returns {object} 500 - An error object.
+ */
+app.get('/api/debug/export', async (req, res) => {
+    try {
+        const categories = await Category.find();
+        const snippets = await Snippet.find();
+        const settings = await Settings.find();
+        const startingSnippets = await StartingSnippet.find();
+
+        const data = {
+            categories,
+            snippets,
+            settings,
+            startingSnippets,
+        };
+
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * @route POST /api/debug/import
+ * @description Import data from a JSON object, overwriting existing data.
+ * @param {object} req.body - The JSON object containing the data to import.
+ * @returns {object} 200 - A success message.
+ * @returns {object} 500 - An error object.
+ */
+app.post('/api/debug/import', async (req, res) => {
+    try {
+        const { categories, snippets, settings, startingSnippets } = req.body;
+
+        // Clear existing data
+        await Category.deleteMany({});
+        await Snippet.deleteMany({});
+        await Settings.deleteMany({});
+        await StartingSnippet.deleteMany({});
+
+        // Insert new data
+        if (categories) await Category.insertMany(categories);
+        if (snippets) await Snippet.insertMany(snippets);
+        if (settings) await Settings.insertMany(settings);
+        if (startingSnippets) await StartingSnippet.insertMany(startingSnippets);
+
+        res.status(200).json({ message: 'Data imported successfully.' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
