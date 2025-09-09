@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import axios from 'axios';
 import {
   Box,
@@ -18,10 +18,12 @@ import CategoryTreeWidget from './components/widgets/CategoryTreeWidget';
 import SnippetListWidget from './components/widgets/SnippetListWidget';
 import SnippetViewer from './components/SnippetViewer';
 import AddCategoryModal from './components/AddCategoryModal';
-import SettingsModal from './components/SettingsModal';
-import AnalyticsPage from './components/AnalyticsPage';
-import StartingSnippetManager from './components/StartingSnippetManager';
-import CalendarModal from './components/CalendarModal';
+
+const SettingsModal = lazy(() => import('./components/SettingsModal'));
+const AnalyticsPage = lazy(() => import('./components/AnalyticsPage'));
+const StartingSnippetManager = lazy(() => import('./components/StartingSnippetManager'));
+const CalendarModal = lazy(() => import('./components/CalendarModal'));
+
 
 const api = axios.create({
   baseURL: '/api',
@@ -203,8 +205,12 @@ function App() {
    */
   const handleAddCategory = async (name) => {
     try {
-      await api.post('/categories', { name, parentId: addCategoryParentId });
-      await fetchAllData();
+      const { data: newCategory } = await api.post('/categories', { name, parentId: addCategoryParentId });
+      // We still refetch the category tree because client-side tree manipulation is complex.
+      // This is a compromise to avoid bugs while still being more efficient than fetchAllData.
+      const { data: newCategories } = await api.get('/categories');
+      setCategories(newCategories);
+      onAddCategoryClose();
     } catch (error) {
       console.error('Error adding category:', error);
     }
@@ -218,7 +224,9 @@ function App() {
   const handleEditCategory = async (id, newName) => {
     try {
       await api.put(`/categories/${id}`, { name: newName });
-      await fetchAllData();
+      // We still refetch the category tree because client-side tree manipulation is complex.
+      const { data: newCategories } = await api.get('/categories');
+      setCategories(newCategories);
     } catch (error) {
       console.error('Error editing category:', error);
     }
@@ -231,7 +239,12 @@ function App() {
   const handleDeleteCategory = async (id) => {
     try {
       await api.delete(`/categories/${id}`);
-      await fetchAllData();
+      // Because deleting a category can have cascading effects, we refetch
+      const { data: newCategories } = await api.get('/categories');
+      setCategories(newCategories);
+      // Also refetch snippets as they might have been deleted
+      const { data: newSnippets } = await api.get('/snippets');
+      setSnippets(newSnippets);
     } catch (error) {
       console.error('Error deleting category:', error);
     }
@@ -245,7 +258,8 @@ function App() {
   const handleMoveCategory = async (draggedId, targetId) => {
     try {
         await api.put(`/categories/${draggedId}`, { parentId: targetId });
-        await fetchAllData();
+        const { data: newCategories } = await api.get('/categories');
+        setCategories(newCategories);
     } catch (error) {
         console.error('Error moving category:', error);
     }
@@ -258,8 +272,8 @@ function App() {
    */
   const handleMoveSnippet = async (snippetId, categoryId) => {
     try {
-        await api.put(`/snippets/${snippetId}`, { categoryId: categoryId });
-        await fetchAllData();
+        const { data: updatedSnippet } = await api.put(`/snippets/${snippetId}`, { categoryId: categoryId });
+        setSnippets(prev => prev.map(s => s._id === snippetId ? updatedSnippet : s));
     } catch (error) {
         console.error('Error moving snippet:', error);
     }
@@ -280,13 +294,12 @@ function App() {
    */
   const handleAddSnippet = async (snippet) => {
     if (!selectedCategory) {
-        // This should be handled by disabling the button, but as a fallback:
         alert('Please select a category first to add a snippet.');
         return;
     }
     try {
-      await api.post('/snippets', { ...snippet, categoryId: selectedCategory });
-      await fetchAllData();
+      const { data: newSnippet } = await api.post('/snippets', { ...snippet, categoryId: selectedCategory });
+      setSnippets(prev => [...prev, newSnippet]);
     } catch (error) {
       console.error('Error adding snippet:', error);
     }
@@ -298,8 +311,9 @@ function App() {
    */
   const handleEditSnippet = async (updatedSnippet) => {
     try {
-      await api.put(`/snippets/${updatedSnippet._id}`, updatedSnippet);
-      await fetchAllData();
+      const { data: returnedSnippet } = await api.put(`/snippets/${updatedSnippet._id}`, updatedSnippet);
+      setSnippets(prev => prev.map(s => s._id === returnedSnippet._id ? returnedSnippet : s));
+      setSelectedSnippet(returnedSnippet);
     } catch (error) {
       console.error('Error editing snippet:', error);
     }
@@ -312,8 +326,9 @@ function App() {
   const handleDeleteSnippet = async (id) => {
     try {
       await api.delete(`/snippets/${id}`);
-      await fetchAllData();
-    } catch (error) {
+      setSnippets(prev => prev.filter(s => s._id !== id));
+    } catch (error)
+      {
       console.error('Error deleting snippet:', error);
     }
   };
@@ -329,12 +344,15 @@ function App() {
       }
   }
 
-  const filteredSnippets = searchTerm
-    ? snippets.filter(snippet =>
+  const filteredSnippets = useMemo(() => {
+    if (searchTerm) {
+      return snippets.filter(snippet =>
         snippet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (snippet.content && snippet.content.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
-    : snippets.filter(snippet => snippet.categoryId === selectedCategory);
+      );
+    }
+    return snippets.filter(snippet => snippet.categoryId === selectedCategory);
+  }, [snippets, searchTerm, selectedCategory]);
 
   const renderView = () => {
       switch(currentView) {
@@ -411,29 +429,31 @@ function App() {
             bg={settings?.theme.accentColor}
         />
       </Flex>
-      {renderView()}
-      <AddCategoryModal
-        isOpen={isAddCategoryOpen}
-        onClose={onAddCategoryClose}
-        onAdd={handleAddCategory}
-        settings={settings}
-      />
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={onSettingsClose}
-        onSave={handleSaveSettings}
-        settings={settings}
-      />
-      <StartingSnippetManager
-        isOpen={isStartingSnippetOpen}
-        onClose={onStartingSnippetClose}
-        settings={settings}
-      />
-      <CalendarModal
-        isOpen={isCalendarOpen}
-        onClose={onCalendarClose}
-        settings={settings}
-      />
+      <Suspense fallback={<Flex justify="center" align="center" flex="1"><Spinner size="xl" /></Flex>}>
+        {renderView()}
+        <AddCategoryModal
+          isOpen={isAddCategoryOpen}
+          onClose={onAddCategoryClose}
+          onAdd={handleAddCategory}
+          settings={settings}
+        />
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          onClose={onSettingsClose}
+          onSave={handleSaveSettings}
+          settings={settings}
+        />
+        <StartingSnippetManager
+          isOpen={isStartingSnippetOpen}
+          onClose={onStartingSnippetClose}
+          settings={settings}
+        />
+        <CalendarModal
+          isOpen={isCalendarOpen}
+          onClose={onCalendarClose}
+          settings={settings}
+        />
+      </Suspense>
     </Flex>
     </DndProvider>
   );

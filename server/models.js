@@ -14,7 +14,7 @@ const mongoose = require('mongoose');
 const categorySchema = new mongoose.Schema({
     name: { type: String, required: true },
     // A null parentId indicates a top-level category
-    parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
+    parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null, index: true },
 });
 
 /**
@@ -31,7 +31,7 @@ const categorySchema = new mongoose.Schema({
  * @type {mongoose.Schema<Snippet>}
  */
 const snippetSchema = new mongoose.Schema({
-    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true, index: true },
     name: { type: String, required: true },
     content: String,
     useCount: { type: Number, default: 0 }
