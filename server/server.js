@@ -31,31 +31,29 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
 // --- API Endpoints ---
 
 /**
- * Recursively builds a tree structure from a flat list of categories.
+ * Builds a tree structure from a flat list of categories in an efficient O(n) way.
  * @param {Array<Category>} categories - The flat list of categories from the database.
- * @param {mongoose.Schema.Types.ObjectId | null} parentId - The ID of the parent category to find children for.
  * @returns {Array<Category>} A tree of categories, where each category object has a `children` property.
  */
-const buildTree = (categories, parentId = null) => {
-    const tree = [];
-    categories
-        .filter(cat => {
-            // Handle root categories (parentId is null)
-            if (parentId === null) {
-                return cat.parentId === null;
-            }
-            // Handle child categories (compare ObjectId)
-            return cat.parentId && cat.parentId.equals(parentId);
-        })
-        .forEach(cat => {
-            const children = buildTree(categories, cat._id);
-            const catObj = cat.toObject();
-            tree.push({
-                ...catObj,
-                children: children
-            });
-        });
-    return tree;
+const buildTree = (categories) => {
+    const map = {};
+    const roots = [];
+
+    // First pass: create a map of all nodes
+    categories.forEach(cat => {
+        map[cat._id] = { ...cat.toObject(), children: [] };
+    });
+
+    // Second pass: link children to their parents
+    categories.forEach(cat => {
+        if (cat.parentId && map[cat.parentId]) {
+            map[cat.parentId].children.push(map[cat._id]);
+        } else {
+            roots.push(map[cat._id]);
+        }
+    });
+
+    return roots;
 };
 
 // Categories
