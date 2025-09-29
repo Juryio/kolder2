@@ -346,9 +346,11 @@ function App() {
 
   const filteredSnippets = useMemo(() => {
     if (searchTerm) {
+      const lowercasedTerm = searchTerm.toLowerCase();
       return snippets.filter(snippet =>
-        snippet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (snippet.content && snippet.content.toLowerCase().includes(searchTerm.toLowerCase()))
+        snippet.name.toLowerCase().includes(lowercasedTerm) ||
+        (snippet.content && snippet.content.toLowerCase().includes(lowercasedTerm)) ||
+        (snippet.tags && snippet.tags.some(tag => tag.toLowerCase().includes(lowercasedTerm)))
       );
     }
     return snippets.filter(snippet => snippet.categoryId === selectedCategory);
