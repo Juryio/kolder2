@@ -34,7 +34,8 @@ const snippetSchema = new mongoose.Schema({
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true, index: true },
     name: { type: String, required: true },
     content: String,
-    useCount: { type: Number, default: 0 }
+    useCount: { type: Number, default: 0 },
+    tags: { type: [String], default: [] }
 });
 
 /**

@@ -9,6 +9,9 @@ import {
   Text,
   IconButton,
   Input,
+  Wrap,
+  WrapItem,
+  Tag,
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon, EditIcon } from '@chakra-ui/icons';
 import SnippetEditor from './SnippetEditor';
@@ -65,12 +68,23 @@ const DraggableSnippetItem = ({ snippet, categories, onSelectSnippet, onEdit, on
             mt={2}
             style={{ opacity: isDragging ? 0.5 : 1, cursor: 'move' }}
         >
-            <Box>
+            <Box flex="1" mr={2}>
                 <Text fontWeight="bold" cursor="pointer" onClick={() => onSelectSnippet(snippet)}>{snippet.name}</Text>
                 {isSearching && (
-                    <Text fontSize="xs" color="gray.500">
+                    <Text fontSize="xs" color="gray.500" mb={1}>
                         in: {getCategoryPath(snippet.categoryId, categories)}
                     </Text>
+                )}
+                {snippet.tags && snippet.tags.length > 0 && (
+                    <Wrap mt={2}>
+                        {snippet.tags.map(tag => (
+                            <WrapItem key={tag}>
+                                <Tag size="sm" variant="solid" colorScheme="purple">
+                                    {tag}
+                                </Tag>
+                            </WrapItem>
+                        ))}
+                    </Wrap>
                 )}
             </Box>
             <Box>

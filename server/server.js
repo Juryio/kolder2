@@ -191,7 +191,13 @@ app.get('/api/snippets', async (req, res) => {
  */
 app.post('/api/snippets', async (req, res) => {
     try {
-        const newSnippet = new Snippet(req.body);
+        const { name, content, categoryId, tags } = req.body;
+        const newSnippet = new Snippet({
+            name,
+            content,
+            categoryId,
+            tags: tags || [],
+        });
         await newSnippet.save();
         res.status(201).json(newSnippet);
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -207,7 +213,20 @@ app.post('/api/snippets', async (req, res) => {
  */
 app.put('/api/snippets/:id', async (req, res) => {
     try {
-        const updatedSnippet = await Snippet.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        // To prevent accidental overwrites, we explicitly build the update object
+        const { name, content, categoryId, tags } = req.body;
+        const update = {};
+        // Only include fields that are actually present in the request body
+        if (name !== undefined) update.name = name;
+        if (content !== undefined) update.content = content;
+        if (categoryId !== undefined) update.categoryId = categoryId;
+        if (tags !== undefined) update.tags = tags;
+
+        const updatedSnippet = await Snippet.findByIdAndUpdate(
+            req.params.id,
+            update,
+            { new: true }
+        );
         res.json(updatedSnippet);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
