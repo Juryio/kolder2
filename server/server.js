@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const mongoose = require('mongoose');
 const { Category, Snippet, Settings, StartingSnippet } = require('./models');
+const EmbeddingService = require('./embedding-service');
 
 const app = express();
 const PORT = process.env.PORT || 8448;
@@ -192,11 +193,17 @@ app.get('/api/snippets', async (req, res) => {
 app.post('/api/snippets', async (req, res) => {
     try {
         const { name, content, categoryId, tags } = req.body;
+
+        // Combine name and content for a richer embedding
+        const textToEmbed = `${name}\n${content}`;
+        const embedding = await EmbeddingService.generateEmbedding(textToEmbed);
+
         const newSnippet = new Snippet({
             name,
             content,
             categoryId,
             tags: tags || [],
+            embedding: embedding,
         });
         await newSnippet.save();
         res.status(201).json(newSnippet);
@@ -213,14 +220,21 @@ app.post('/api/snippets', async (req, res) => {
  */
 app.put('/api/snippets/:id', async (req, res) => {
     try {
-        // To prevent accidental overwrites, we explicitly build the update object
         const { name, content, categoryId, tags } = req.body;
         const update = {};
-        // Only include fields that are actually present in the request body
+
         if (name !== undefined) update.name = name;
         if (content !== undefined) update.content = content;
         if (categoryId !== undefined) update.categoryId = categoryId;
         if (tags !== undefined) update.tags = tags;
+
+        // If the name or content is being updated, regenerate the embedding
+        if (name !== undefined || content !== undefined) {
+            // We need the full text, so fetch the original if one part is missing
+            const originalSnippet = await Snippet.findById(req.params.id);
+            const textToEmbed = `${name || originalSnippet.name}\n${content || originalSnippet.content}`;
+            update.embedding = await EmbeddingService.generateEmbedding(textToEmbed);
+        }
 
         const updatedSnippet = await Snippet.findByIdAndUpdate(
             req.params.id,
@@ -243,6 +257,121 @@ app.delete('/api/snippets/:id', async (req, res) => {
         await Snippet.findByIdAndDelete(req.params.id);
         res.status(204).send();
     } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+
+// --- Search ---
+
+/**
+ * Calculates the cosine similarity between two vectors.
+ * @param {Array<number>} vecA - The first vector.
+ * @param {Array<number>} vecB - The second vector.
+ * @returns {number} The cosine similarity score (between -1 and 1).
+ */
+const cosineSimilarity = (vecA, vecB) => {
+    if (!vecA || !vecB || vecA.length !== vecB.length) {
+        return 0;
+    }
+
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+    for (let i = 0; i < vecA.length; i++) {
+        dotProduct += vecA[i] * vecB[i];
+        normA += vecA[i] * vecA[i];
+        normB += vecB[i] * vecB[i];
+    }
+
+    if (normA === 0 || normB === 0) {
+        return 0;
+    }
+
+    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+};
+
+/**
+ * @route GET /api/search
+ * @description Search for snippets using a hybrid keyword and semantic approach.
+ * @param {string} req.query.q - The search query.
+ * @returns {Array<Snippet>} 200 - A list of ranked snippets.
+ * @returns {object} 500 - An error object.
+ */
+app.get('/api/search', async (req, res) => {
+    try {
+        const { q } = req.query;
+
+        if (!q || typeof q !== 'string' || q.trim().length === 0) {
+            return res.json([]); // Return empty for empty query
+        }
+
+        // --- Phase 1: Keyword Filtering ---
+        // Use the text index to get an initial set of relevant snippets.
+        const keywordResults = await Snippet.find(
+            { $text: { $search: q } },
+            { score: { $meta: 'textScore' } }
+        ).lean();
+
+        // If keyword search returns nothing, we could optionally do a full semantic search.
+        // For now, we'll stick to the hybrid approach on keyword-filtered results for performance.
+        if (keywordResults.length === 0) {
+            return res.json([]);
+        }
+
+        // --- Phase 2: Semantic Comparison ---
+        const queryEmbedding = await EmbeddingService.generateEmbedding(q);
+
+        // --- Phase 3: Hybrid Ranking ---
+        const rankedResults = keywordResults.map(snippet => {
+            // Ensure snippet has an embedding before calculating similarity
+            const semanticScore = snippet.embedding ? cosineSimilarity(queryEmbedding, snippet.embedding) : 0;
+            const textScore = snippet.score || 0;
+
+            // Simple weighted average for the hybrid score. These weights can be tuned.
+            // Example: 70% semantic, 30% keyword.
+            const hybridScore = (0.7 * semanticScore) + (0.3 * textScore);
+
+            return {
+                ...snippet,
+                hybridScore
+            };
+        });
+
+        // Sort by the final hybrid score in descending order
+        rankedResults.sort((a, b) => b.hybridScore - a.hybridScore);
+
+        res.json(rankedResults);
+
+    } catch (err) {
+        console.error('Search error:', err);
+        res.status(500).json({ error: 'An error occurred during the search.' });
+    }
+});
+
+/**
+ * @route POST /api/snippets/reindex-all
+ * @description Manually trigger re-indexing for all snippets in the database.
+ * @returns {object} 200 - A success message with the count of re-indexed snippets.
+ * @returns {object} 500 - An error object.
+ */
+app.post('/api/snippets/reindex-all', async (req, res) => {
+    try {
+        console.log('Starting re-indexing for all snippets...');
+        const snippets = await Snippet.find({ embedding: { $exists: false } });
+        let updatedCount = 0;
+
+        for (const snippet of snippets) {
+            const textToEmbed = `${snippet.name}\n${snippet.content}`;
+            snippet.embedding = await EmbeddingService.generateEmbedding(textToEmbed);
+            await snippet.save();
+            updatedCount++;
+        }
+
+        console.log(`Re-indexing complete. Updated ${updatedCount} snippets.`);
+        res.status(200).json({ message: `Successfully re-indexed ${updatedCount} snippets.` });
+    } catch (err) {
+        console.error('Re-indexing error:', err);
+        res.status(500).json({ error: 'An error occurred during re-indexing.' });
+    }
 });
 
 

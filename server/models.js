@@ -35,8 +35,12 @@ const snippetSchema = new mongoose.Schema({
     name: { type: String, required: true },
     content: String,
     useCount: { type: Number, default: 0 },
-    tags: { type: [String], default: [] }
+    tags: { type: [String], default: [] },
+    embedding: { type: [Number] }
 });
+
+// Add a text index to support fast, text-based searching across multiple fields.
+snippetSchema.index({ name: 'text', content: 'text', tags: 'text' });
 
 /**
  * @typedef {object} Theme
