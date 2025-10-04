@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense, useRef } from 'react';
 import axios from 'axios';
 import {
   Box,
@@ -114,7 +114,9 @@ function App() {
   const { isOpen: isCalendarOpen, onOpen: onCalendarOpen, onClose: onCalendarClose } = useDisclosure();
   const [openCategories, setOpenCategories] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
   const [currentView, setCurrentView] = useState('main'); // 'main' or 'analytics'
+  const debounceTimeout = useRef(null);
 
   /**
    * Toggles the expanded/collapsed state of a category.
@@ -334,27 +336,42 @@ function App() {
   };
 
   /**
-   * Handles changes to the search term.
+   * Handles changes to the search term, debouncing the API call.
    * @param {string} term - The new search term.
    */
   const handleSearchChange = (term) => {
-      setSearchTerm(term);
-      if(term) {
-          setSelectedCategory(null);
-      }
+    setSearchTerm(term);
+
+    // Clear the previous timeout
+    if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+    }
+
+    if (term) {
+        setSelectedCategory(null); // Clear category selection when searching
+        // Set a new timeout to call the API after 300ms
+        debounceTimeout.current = setTimeout(async () => {
+            try {
+                const { data } = await api.get(`/search?q=${term}`);
+                setSearchResults(data);
+            } catch (error) {
+                console.error('Error fetching search results:', error);
+                setSearchResults([]);
+            }
+        }, 300);
+    } else {
+        setSearchResults([]); // Clear results if search term is empty
+    }
   }
 
   const filteredSnippets = useMemo(() => {
+    // If there's a search term, the source of truth is the searchResults state.
     if (searchTerm) {
-      const lowercasedTerm = searchTerm.toLowerCase();
-      return snippets.filter(snippet =>
-        snippet.name.toLowerCase().includes(lowercasedTerm) ||
-        (snippet.content && snippet.content.toLowerCase().includes(lowercasedTerm)) ||
-        (snippet.tags && snippet.tags.some(tag => tag.toLowerCase().includes(lowercasedTerm)))
-      );
+      return searchResults;
     }
+    // Otherwise, it's the snippets filtered by the selected category.
     return snippets.filter(snippet => snippet.categoryId === selectedCategory);
-  }, [snippets, searchTerm, selectedCategory]);
+  }, [snippets, searchTerm, selectedCategory, searchResults]);
 
   const renderView = () => {
       switch(currentView) {
