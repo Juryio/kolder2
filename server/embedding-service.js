@@ -1,5 +1,3 @@
-const { pipeline } = require('@xenova/transformers');
-
 /**
  * A singleton class to manage the text embedding pipeline.
  * This ensures that the model is loaded only once, saving memory and time.
@@ -17,6 +15,8 @@ class EmbeddingService {
     static async getInstance() {
         if (this.instance === null) {
             console.log('Initializing embedding model for the first time...');
+            // Dynamically import the pipeline function from the ES Module.
+            const { pipeline } = await import('@xenova/transformers');
             // Load the small, efficient, multilingual model.
             // The first time this runs, it will download the model files.
             this.instance = await pipeline('feature-extraction', 'Xenova/paraphrase-multilingual-MiniLM-L12-v2');
