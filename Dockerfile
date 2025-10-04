@@ -1,5 +1,5 @@
 # Stage 1: Build the frontend
-FROM node:18-alpine AS builder-fe
+FROM arm64v8/node:18-bullseye-slim AS builder-fe
 
 WORKDIR /app
 
@@ -19,7 +19,7 @@ RUN cd kolder-app && npm run build
 
 
 # Stage 2: Build the backend
-FROM node:18-alpine AS builder-be
+FROM arm64v8/node:18-bullseye-slim AS builder-be
 
 WORKDIR /app
 COPY server/package.json server/package-lock.json ./server/
@@ -27,7 +27,13 @@ RUN cd server && npm install
 
 
 # Stage 3: Create the final production image
-FROM node:18-alpine
+FROM arm64v8/node:18-bullseye-slim
+
+# Install required shared libraries for onnxruntime on ARM64
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libc6 \
+    libstdc++6 \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
