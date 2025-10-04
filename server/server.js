@@ -327,10 +327,11 @@ app.get('/api/search', async (req, res) => {
                 hybridScore: cosineSimilarity(queryEmbedding, snippet.embedding) // Score is purely semantic
             }));
 
-            // Filter out snippets with low relevance and sort by score
+            // Sort by score and return the top N results. This is more robust
+            // than a fixed threshold, as it always returns the most likely candidates.
             const relevantResults = semanticResults
-                .filter(s => s.hybridScore > 0.35) // This threshold can be tuned
-                .sort((a, b) => b.hybridScore - a.hybridScore);
+                .sort((a, b) => b.hybridScore - a.hybridScore)
+                .slice(0, 10); // Return the top 10 results
 
             return res.json(relevantResults);
         }
