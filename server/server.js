@@ -299,44 +299,57 @@ const cosineSimilarity = (vecA, vecB) => {
 app.get('/api/search', async (req, res) => {
     try {
         const { q } = req.query;
-
         if (!q || typeof q !== 'string' || q.trim().length === 0) {
-            return res.json([]); // Return empty for empty query
+            return res.json([]);
         }
 
         // --- Phase 1: Keyword Filtering ---
-        // Use the text index to get an initial set of relevant snippets.
-        const keywordResults = await Snippet.find(
+        // First, try a fast keyword-based search.
+        let keywordResults = await Snippet.find(
             { $text: { $search: q } },
             { score: { $meta: 'textScore' } }
         ).lean();
 
-        // If keyword search returns nothing, we could optionally do a full semantic search.
-        // For now, we'll stick to the hybrid approach on keyword-filtered results for performance.
+        // --- Phase 2: Fallback to Full Semantic Search ---
+        // If keyword search yields no results, perform a full semantic search across all snippets.
+        // This is the key to finding relevant results even without matching keywords.
         if (keywordResults.length === 0) {
-            return res.json([]);
+            console.log('Keyword search returned no results. Falling back to full semantic search.');
+            const allSnippets = await Snippet.find({ embedding: { $exists: true, $ne: null } }).lean();
+            if (allSnippets.length === 0) {
+                return res.json([]); // No snippets have embeddings, so can't search
+            }
+
+            const queryEmbedding = await EmbeddingService.generateEmbedding(q);
+
+            const semanticResults = allSnippets.map(snippet => ({
+                ...snippet,
+                hybridScore: cosineSimilarity(queryEmbedding, snippet.embedding) // Score is purely semantic
+            }));
+
+            // Filter out snippets with low relevance and sort by score
+            const relevantResults = semanticResults
+                .filter(s => s.hybridScore > 0.35) // This threshold can be tuned
+                .sort((a, b) => b.hybridScore - a.hybridScore);
+
+            return res.json(relevantResults);
         }
 
-        // --- Phase 2: Semantic Comparison ---
+        // --- Phase 3: Rank Hybrid Results ---
+        // If we have keyword results, we enrich them with a semantic score for a hybrid ranking.
         const queryEmbedding = await EmbeddingService.generateEmbedding(q);
 
-        // --- Phase 3: Hybrid Ranking ---
         const rankedResults = keywordResults.map(snippet => {
-            // Ensure snippet has an embedding before calculating similarity
             const semanticScore = snippet.embedding ? cosineSimilarity(queryEmbedding, snippet.embedding) : 0;
             const textScore = snippet.score || 0;
 
-            // Simple weighted average for the hybrid score. These weights can be tuned.
-            // Example: 70% semantic, 30% keyword.
+            // Weighted average: 70% semantic, 30% keyword. This can be tuned.
             const hybridScore = (0.7 * semanticScore) + (0.3 * textScore);
 
-            return {
-                ...snippet,
-                hybridScore
-            };
+            return { ...snippet, hybridScore };
         });
 
-        // Sort by the final hybrid score in descending order
+        // Sort by the final hybrid score
         rankedResults.sort((a, b) => b.hybridScore - a.hybridScore);
 
         res.json(rankedResults);
