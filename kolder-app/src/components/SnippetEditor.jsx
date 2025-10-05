@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import {
   Box,
   FormControl,
@@ -21,6 +22,10 @@ import 'react-quill/dist/quill.snow.css';
 import './quill.css';
 import PlaceholderBuilderModal from './PlaceholderBuilderModal';
 
+const api = axios.create({
+    baseURL: '/api',
+});
+
 /**
  * A component for editing a snippet's name and content.
  * @param {object} props - The component's props.
@@ -36,6 +41,7 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
   const [content, setContent] = useState('');
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
   const quillRef = useRef(null);
 
   useEffect(() => {
@@ -49,6 +55,32 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
       setTags([]);
     }
   }, [snippet]);
+
+  /**
+   * Calls the backend to transform the text to the formal "Sie" form.
+   */
+  const handleFormalizeText = async () => {
+    const editor = quillRef.current.getEditor();
+    const textToFormalize = editor.getText(); // Get plain text from Quill
+    if (!textToFormalize.trim()) return;
+
+    setIsGenerating(true);
+    try {
+      const response = await api.post('/text/generate', {
+        text: textToFormalize,
+        task: 'formalize',
+      });
+      if (response.data && response.data.generatedText) {
+        // Replace the entire content with the formalized text
+        setContent(response.data.generatedText);
+      }
+    } catch (error) {
+      console.error("Error generating formal text:", error);
+      // Optionally, show an error toast to the user
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   /**
    * Handles the click on the "Save" button.
@@ -140,7 +172,17 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
           <FormControl>
               <Flex justify="space-between" align="center">
                   <FormLabel mb="0">Content</FormLabel>
-                  <Button size="xs" onClick={onBuilderOpen}>Insert Placeholder</Button>
+                  <HStack>
+                    <Button
+                        size="xs"
+                        onClick={handleFormalizeText}
+                        isLoading={isGenerating}
+                        loadingText="Umschreiben..."
+                    >
+                        Umschreiben (Sie)
+                    </Button>
+                    <Button size="xs" onClick={onBuilderOpen}>Insert Placeholder</Button>
+                  </HStack>
               </Flex>
               <ReactQuill ref={quillRef} theme="snow" value={content} onChange={setContent} style={{marginTop: '8px'}}/>
           </FormControl>

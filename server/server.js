@@ -5,6 +5,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const { Category, Snippet, Settings, StartingSnippet } = require('./models');
 const EmbeddingService = require('./embedding-service');
+const GenerationService = require('./generation-service');
 
 const app = express();
 const PORT = process.env.PORT || 8448;
@@ -512,6 +513,53 @@ app.post('/api/testing/clear-db', async (req, res) => {
         res.status(204).send();
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+
+// --- AI Services ---
+
+/**
+ * @route POST /api/text/generate
+ * @description Generates transformed text using the T5 model.
+ * @param {object} req.body - The request body.
+ * @param {string} req.body.text - The input text to transform.
+ * @param {string} req.body.task - The task to perform (e.g., "formalize").
+ * @returns {object} 200 - An object containing the generated text.
+ * @returns {object} 400 - An error object if the input is invalid.
+ * @returns {object} 500 - An error object.
+ */
+app.post('/api/text/generate', async (req, res) => {
+    try {
+        const { text, task } = req.body;
+
+        if (!text || !task) {
+            return res.status(400).json({ error: 'Missing "text" or "task" in request body.' });
+        }
+
+        let taskPrefix;
+        switch (task) {
+            case 'formalize':
+                taskPrefix = 'Rewrite the following text in a formal, polite tone using "Sie" instead of "Du": ';
+                break;
+            case 'correct-grammar':
+                taskPrefix = 'Correct the grammar and spelling of the following text: ';
+                break;
+            default:
+                return res.status(400).json({ error: 'Unsupported task.' });
+        }
+
+        const generatedText = await GenerationService.generate(text, taskPrefix);
+
+        if (generatedText) {
+            res.json({ generatedText });
+        } else {
+            res.status(500).json({ error: 'Failed to generate text.' });
+        }
+
+    } catch (err) {
+        console.error('Text generation error:', err);
+        res.status(500).json({ error: 'An error occurred during text generation.' });
     }
 });
 
