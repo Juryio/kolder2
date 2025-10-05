@@ -3,7 +3,6 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 const mongoose = require('mongoose');
-const axios = require('axios');
 const { Category, Snippet, Settings, StartingSnippet } = require('./models');
 const EmbeddingService = require('./embedding-service');
 
@@ -258,54 +257,6 @@ app.delete('/api/snippets/:id', async (req, res) => {
         await Snippet.findByIdAndDelete(req.params.id);
         res.status(204).send();
     } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-
-// --- Grammar Check ---
-
-/**
- * @route POST /api/check-grammar
- * @description Checks a given text for grammar and style errors using LanguageTool.
- * @param {object} req.body - The request body.
- * @param {string} req.body.text - The text to be checked.
- * @returns {object} 200 - The raw JSON response from the LanguageTool API.
- * @returns {object} 500 - An error object if the check fails.
- */
-app.post('/api/check-grammar', async (req, res) => {
-    try {
-        const { text } = req.body;
-        if (!text) {
-            return res.status(400).json({ error: 'Text to check is required.' });
-        }
-
-        const languageToolUrl = 'http://localhost:8081/v2/check';
-
-        // LanguageTool expects the data to be form-urlencoded
-        const params = new URLSearchParams();
-        params.append('text', text);
-        params.append('language', 'de-DE'); // Check for German
-
-        const response = await axios.post(languageToolUrl, params, {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-        });
-
-        res.json(response.data);
-
-    } catch (error) {
-        // Log the detailed error for debugging
-        if (error.response) {
-            console.error('Error from LanguageTool API:', error.response.data);
-            res.status(error.response.status).json({ error: 'Error from LanguageTool API', details: error.response.data });
-        } else if (error.request) {
-            console.error('Error making request to LanguageTool:', error.request);
-            res.status(500).json({ error: 'Could not connect to LanguageTool service.' });
-        } else {
-            console.error('Error setting up grammar check request:', error.message);
-            res.status(500).json({ error: 'An internal server error occurred.' });
-        }
-    }
 });
 
 

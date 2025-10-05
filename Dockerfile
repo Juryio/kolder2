@@ -29,22 +29,13 @@ RUN cd server && npm install
 # Stage 3: Create the final production image
 FROM arm64v8/node:18-bullseye-slim
 
-# Install dependencies for Kolder and LanguageTool
+# Install required shared libraries for onnxruntime on ARM64
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libc6 \
     libstdc++6 \
-    openjdk-17-jre-headless \
-    unzip \
-    wget \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
-# Download and set up LanguageTool
-RUN wget https://www.languagetool.org/download/LanguageTool-6.3.zip -O languagetool.zip && \
-    unzip languagetool.zip -d /app/languagetool && \
-    mv /app/languagetool/LanguageTool-6.3/* /app/languagetool/ && \
-    rm -rf /app/languagetool/LanguageTool-6.3 languagetool.zip
 
 # Copy backend node_modules from the backend builder stage
 COPY --from=builder-be /app/server/node_modules ./server/node_modules
@@ -55,13 +46,8 @@ COPY server/ ./server/
 # Copy frontend build artifacts from the frontend builder stage
 COPY --from=builder-fe /app/kolder-app/dist ./kolder-app/dist
 
-# Copy the start script and make it executable
-COPY start.sh .
-RUN chmod +x ./start.sh
-
-# Expose the ports for Kolder and LanguageTool
+# Expose the port the server runs on
 EXPOSE 8448
-EXPOSE 8081
 
 # Command to run the application
-CMD ["./start.sh"]
+CMD ["node", "server/server.js"]
