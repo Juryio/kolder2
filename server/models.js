@@ -94,16 +94,4 @@ const Snippet = mongoose.model('Snippet', snippetSchema);
 const Settings = mongoose.model('Settings', settingsSchema);
 const StartingSnippet = mongoose.model('StartingSnippet', startingSnippetSchema);
 
-/**
- * @typedef {object} Prompt
- * @property {string} name - The user-defined name for the prompt (e.g., "Zusammenfassung Deutsch").
- * @property {string} prompt - The full prompt text to be sent to the AI (e.g., "Fasse den folgenden Text auf Deutsch zusammen: ").
- */
-const promptSchema = new mongoose.Schema({
-    name: { type: String, required: true, unique: true },
-    prompt: { type: String, required: true },
-});
-
-const Prompt = mongoose.model('Prompt', promptSchema);
-
-module.exports = { Category, Snippet, Settings, StartingSnippet, Prompt };
+module.exports = { Category, Snippet, Settings, StartingSnippet };

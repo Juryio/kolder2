@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import {
   Box,
   FormControl,
@@ -16,20 +15,11 @@ import {
   Tag,
   TagLabel,
   TagCloseButton,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
 } from '@chakra-ui/react';
-import { ChevronDownIcon } from '@chakra-ui/icons';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import './quill.css';
 import PlaceholderBuilderModal from './PlaceholderBuilderModal';
-
-const api = axios.create({
-    baseURL: '/api',
-});
 
 /**
  * A component for editing a snippet's name and content.
@@ -46,22 +36,7 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
   const [content, setContent] = useState('');
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [prompts, setPrompts] = useState([]);
   const quillRef = useRef(null);
-
-  // Fetch custom prompts when the editor opens
-  useEffect(() => {
-    const fetchPrompts = async () => {
-        try {
-            const response = await api.get('/prompts');
-            setPrompts(response.data);
-        } catch (error) {
-            console.error("Failed to fetch prompts", error);
-        }
-    };
-    fetchPrompts();
-  }, []);
 
   useEffect(() => {
     if (snippet) {
@@ -74,33 +49,6 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
       setTags([]);
     }
   }, [snippet]);
-
-  /**
-   * Calls the backend to perform a text transformation using a selected prompt.
-   * @param {string} promptId - The ID of the custom prompt to use.
-   */
-  const handleAITask = async (promptId) => {
-    const editor = quillRef.current.getEditor();
-    const textToTransform = editor.getText(); // Get plain text from Quill
-    if (!textToTransform.trim()) return;
-
-    setIsGenerating(true);
-    try {
-      const response = await api.post('/text/generate', {
-        text: textToTransform,
-        promptId: promptId, // Send the selected prompt ID
-      });
-      if (response.data && response.data.generatedText) {
-        // Replace the entire content with the transformed text
-        setContent(response.data.generatedText);
-      }
-    } catch (error) {
-      console.error(`Error during AI task with prompt ${promptId}:`, error);
-      // Optionally, show an error toast to the user
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   /**
    * Handles the click on the "Save" button.
@@ -192,27 +140,7 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
           <FormControl>
               <Flex justify="space-between" align="center">
                   <FormLabel mb="0">Content</FormLabel>
-                  <HStack>
-                    <Menu>
-                      <MenuButton
-                        as={Button}
-                        size="xs"
-                        rightIcon={<ChevronDownIcon />}
-                        isLoading={isGenerating}
-                        loadingText="Arbeite..."
-                      >
-                        KI-Aktionen
-                      </MenuButton>
-                      <MenuList>
-                        {prompts.map((prompt) => (
-                            <MenuItem key={prompt._id} onClick={() => handleAITask(prompt._id)}>
-                                {prompt.name}
-                            </MenuItem>
-                        ))}
-                      </MenuList>
-                    </Menu>
-                    <Button size="xs" onClick={onBuilderOpen}>Insert Placeholder</Button>
-                  </HStack>
+                  <Button size="xs" onClick={onBuilderOpen}>Insert Placeholder</Button>
               </Flex>
               <ReactQuill ref={quillRef} theme="snow" value={content} onChange={setContent} style={{marginTop: '8px'}}/>
           </FormControl>
