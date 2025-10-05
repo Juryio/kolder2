@@ -36,7 +36,7 @@ class GenerationService {
         const fullPrompt = `${taskPrefix}${inputText}`;
 
         const result = await generator(fullPrompt, {
-            max_new_tokens: 500, // Adjust as needed
+            max_new_tokens: 1024, // Increased token limit for longer answers
             temperature: 0.7,
             repetition_penalty: 1.5,
             no_repeat_ngram_size: 2,
