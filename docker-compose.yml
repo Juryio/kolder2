@@ -8,10 +8,11 @@ services:
     ports:
       - "8448:8448"
     depends_on:
-      - mongo
+      - ollama-setup # The app waits for the model to be pulled
     environment:
       - MONGO_URI=mongodb://mongo:27017/kolderdb
       - PORT=8448
+      - OLLAMA_HOST=http://ollama:11434 # Pass Ollama URL to the app
 
   mongo:
     image: mongo:latest
@@ -20,5 +21,30 @@ services:
     volumes:
       - mongo-data:/data/db
 
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+
+  ollama-setup:
+    image: ollama/ollama
+    command: >
+      sh -c "
+        echo 'Waiting for Ollama service to be ready...' &&
+        while ! ollama list > /dev/null 2>&1; do
+          sleep 1
+        done &&
+        echo 'Ollama is ready. Pulling phi3:mini model...' &&
+        ollama pull phi3:mini &&
+        echo 'Model pull complete. The setup service will now exit.'
+      "
+    volumes:
+      - ollama-data:/root/.ollama
+    depends_on:
+      - ollama
+
 volumes:
   mongo-data:
+  ollama-data:
