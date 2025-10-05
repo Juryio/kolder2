@@ -545,6 +545,12 @@ app.post('/api/text/generate', async (req, res) => {
             case 'correct-grammar':
                 taskPrefix = 'Correct the grammar and spelling of the following text: ';
                 break;
+            case 'summarize':
+                taskPrefix = 'Summarize the following text concisely: ';
+                break;
+            case 'bullet-points':
+                taskPrefix = 'Convert the following text into a clear list of bullet points: ';
+                break;
             default:
                 return res.status(400).json({ error: 'Unsupported task.' });
         }
