@@ -5,6 +5,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const { Category, Snippet, Settings, StartingSnippet } = require('./models');
 const EmbeddingService = require('./embedding-service');
+const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 8448;
@@ -570,6 +571,43 @@ app.post('/api/debug/import', async (req, res) => {
         res.status(200).json({ message: 'Data imported successfully.' });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+
+// --- LanguageTool Proxy ---
+
+/**
+ * @route POST /api/languagetool/check
+ * @description Proxy for LanguageTool grammar checking.
+ * @param {object} req.body - The request body.
+ * @param {string} req.body.text - The text to check.
+ * @returns {object} 200 - The response from the LanguageTool API.
+ * @returns {object} 500 - An error object.
+ */
+app.post('/api/languagetool/check', async (req, res) => {
+    try {
+        const { text } = req.body;
+        const settings = await Settings.findOne();
+
+        if (!settings || !settings.languageToolEnabled || !settings.languageToolApiUrl) {
+            return res.status(400).json({ error: 'LanguageTool is not enabled or configured.' });
+        }
+
+        const response = await axios.post(
+            settings.languageToolApiUrl,
+            `language=en-US&text=${encodeURIComponent(text)}`,
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        );
+
+        res.json(response.data);
+    } catch (err) {
+        console.error('LanguageTool proxy error:', err.message);
+        // Check if the error is from Axios and forward the status if possible
+        if (err.response) {
+            return res.status(err.response.status).json({ error: 'Error from LanguageTool service.' });
+        }
+        res.status(500).json({ error: 'Internal server error proxying to LanguageTool.' });
     }
 });
 

@@ -70,7 +70,9 @@ const settingsSchema = new mongoose.Schema({
         contentBackgroundColor: { type: String, default: '#2D3748' },
         textColor: { type: String, default: '#EDF2F7' },
         accentColor: { type: String, default: '#805AD5' },
-    }
+    },
+    languageToolEnabled: { type: Boolean, default: false },
+    languageToolApiUrl: { type: String, default: 'http://languagetool:8010/v2/check' },
 });
 
 /**
