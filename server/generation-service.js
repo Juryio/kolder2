@@ -1,11 +1,11 @@
 /**
  * A singleton class to manage the text generation pipeline.
- * Ensures the T5 model is loaded only once.
+ * Ensures the Flan-T5 model is loaded only once.
  */
 class GenerationService {
     static instance = null;
-    static model = 'Xenova/Phi-3-mini-4k-instruct'; // Corrected to the public model
-    static task = 'text-generation'; // Phi-3 uses a different task type
+    static model = 'Xenova/flan-t5-base'; // Using the robust and instruction-tuned Flan-T5 model
+    static task = 'text2text-generation'; // Correct task for T5 models
 
     /**
      * Retrieves the singleton instance of the generation pipeline.
@@ -33,9 +33,8 @@ class GenerationService {
         }
 
         const generator = await this.getInstance();
-
-        // Use the specific chat template for Phi-3 for optimal performance
-        const fullPrompt = `<|user|>\n${taskPrefix}\n\n${inputText}<|end|>\n<|assistant|>`;
+        // T5-style models expect a simple concatenation of the instruction and the input text.
+        const fullPrompt = `${taskPrefix}${inputText}`;
 
         const result = await generator(fullPrompt, {
             max_new_tokens: 1024,
@@ -46,10 +45,7 @@ class GenerationService {
         });
 
         if (result && result.length > 0 && result[0].generated_text) {
-            // The model's output includes the full prompt; we must parse the assistant's response.
-            const generatedText = result[0].generated_text;
-            const assistantResponse = generatedText.split('<|assistant|>').pop().trim();
-            return assistantResponse;
+            return result[0].generated_text;
         }
 
         return null;
