@@ -11,7 +11,7 @@ import {
   IconButton,
   Image,
 } from '@chakra-ui/react';
-import { SettingsIcon, ViewIcon, AddIcon, CalendarIcon, EditIcon } from '@chakra-ui/icons';
+import { SettingsIcon, ViewIcon, AddIcon, CalendarIcon } from '@chakra-ui/icons';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import CategoryTreeWidget from './components/widgets/CategoryTreeWidget';
@@ -23,7 +23,6 @@ const SettingsModal = lazy(() => import('./components/SettingsModal'));
 const AnalyticsPage = lazy(() => import('./components/AnalyticsPage'));
 const StartingSnippetManager = lazy(() => import('./components/StartingSnippetManager'));
 const CalendarModal = lazy(() => import('./components/CalendarModal'));
-const PromptManager = lazy(() => import('./components/PromptManager'));
 
 
 const api = axios.create({
@@ -113,7 +112,6 @@ function App() {
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
   const { isOpen: isStartingSnippetOpen, onOpen: onStartingSnippetOpen, onClose: onStartingSnippetClose } = useDisclosure();
   const { isOpen: isCalendarOpen, onOpen: onCalendarOpen, onClose: onCalendarClose } = useDisclosure();
-  const { isOpen: isPromptManagerOpen, onOpen: onPromptManagerOpen, onClose: onPromptManagerClose } = useDisclosure();
   const [openCategories, setOpenCategories] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -443,13 +441,6 @@ function App() {
             bg={settings?.theme.accentColor}
         />
         <IconButton
-            onClick={onPromptManagerOpen}
-            icon={<EditIcon />}
-            aria-label="Manage Prompts"
-            mr={2}
-            bg={settings?.theme.accentColor}
-        />
-        <IconButton
             onClick={onSettingsOpen}
             icon={<SettingsIcon />}
             aria-label="Settings"
@@ -480,11 +471,6 @@ function App() {
           isOpen={isCalendarOpen}
           onClose={onCalendarClose}
           settings={settings}
-        />
-        <PromptManager
-            isOpen={isPromptManagerOpen}
-            onClose={onPromptManagerClose}
-            settings={settings}
         />
       </Suspense>
     </Flex>
