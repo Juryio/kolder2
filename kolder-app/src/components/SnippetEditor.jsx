@@ -15,6 +15,7 @@ import {
   Tag,
   TagLabel,
   TagCloseButton,
+  Text,
 } from '@chakra-ui/react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -36,6 +37,7 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
   const [content, setContent] = useState('');
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
+  const [grammarErrors, setGrammarErrors] = useState([]);
   const quillRef = useRef(null);
 
   useEffect(() => {
@@ -101,6 +103,36 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
+  /**
+   * Fetches grammar suggestions from the backend API.
+   */
+  const handleGrammarCheck = async () => {
+    if (!quillRef.current) return;
+
+    const editor = quillRef.current.getEditor();
+    const text = editor.getText(); // Get plain text from Quill
+
+    try {
+      const response = await fetch('/api/check-grammar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch grammar suggestions.');
+      }
+
+      const data = await response.json();
+      setGrammarErrors(data.matches || []);
+    } catch (error) {
+      console.error("Grammar check error:", error);
+      // Optionally, display an error message to the user
+    }
+  };
+
 
   return (
     <>
@@ -140,9 +172,28 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
           <FormControl>
               <Flex justify="space-between" align="center">
                   <FormLabel mb="0">Content</FormLabel>
-                  <Button size="xs" onClick={onBuilderOpen}>Insert Placeholder</Button>
+                  <HStack>
+                    <Button size="xs" onClick={handleGrammarCheck} colorScheme="blue">Check Grammar</Button>
+                    <Button size="xs" onClick={onBuilderOpen}>Insert Placeholder</Button>
+                  </HStack>
               </Flex>
               <ReactQuill ref={quillRef} theme="snow" value={content} onChange={setContent} style={{marginTop: '8px'}}/>
+              {grammarErrors.length > 0 && (
+                <Box mt={4} p={4} borderWidth="1px" borderRadius="md" bg="gray.50" _dark={{ bg: "gray.700" }}>
+                  <Heading size="sm" mb={2}>Grammar Suggestions</Heading>
+                  {grammarErrors.map((error, index) => (
+                    <Box key={index} mb={3} pb={2} borderBottomWidth="1px" _last={{ borderBottomWidth: 0, mb: 0 }}>
+                      <Text fontWeight="bold">{error.message}</Text>
+                      <Text fontSize="sm" color="gray.500" fontStyle="italic" my={1}>"...{error.context.text}..."</Text>
+                      {error.replacements.length > 0 && (
+                        <Text fontSize="sm">
+                          Suggestions: <Text as="span" fontWeight="semibold">{error.replacements.map(r => `"${r.value}"`).join(', ')}</Text>
+                        </Text>
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+              )}
           </FormControl>
         </VStack>
         <Flex mt={4} justify="flex-end">
