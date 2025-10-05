@@ -11,7 +11,7 @@ import {
   IconButton,
   Image,
 } from '@chakra-ui/react';
-import { SettingsIcon, ViewIcon, AddIcon, CalendarIcon, ChatIcon } from '@chakra-ui/icons';
+import { SettingsIcon, ViewIcon, AddIcon, CalendarIcon, EditIcon } from '@chakra-ui/icons';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import CategoryTreeWidget from './components/widgets/CategoryTreeWidget';
@@ -444,7 +444,7 @@ function App() {
         />
         <IconButton
             onClick={onPromptManagerOpen}
-            icon={<ChatIcon />}
+            icon={<EditIcon />}
             aria-label="Manage Prompts"
             mr={2}
             bg={settings?.theme.accentColor}
