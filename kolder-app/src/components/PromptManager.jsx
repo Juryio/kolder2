@@ -18,7 +18,8 @@ import {
     Box,
     HStack,
     IconButton,
-    Text
+    Text,
+    Heading
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon } from '@chakra-ui/icons';
 
