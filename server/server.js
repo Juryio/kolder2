@@ -540,16 +540,17 @@ app.post('/api/text/generate', async (req, res) => {
         let taskPrefix;
         switch (task) {
             case 'formalize':
-                taskPrefix = 'Rewrite the following text in a formal, polite tone using "Sie" instead of "Du": ';
+                // Use a concise, direct command for the model
+                taskPrefix = 'formalize: ';
                 break;
             case 'correct-grammar':
-                taskPrefix = 'Correct the grammar and spelling of the following text: ';
+                taskPrefix = 'grammar: ';
                 break;
             case 'summarize':
-                taskPrefix = 'Summarize the following text concisely: ';
+                taskPrefix = 'summarize: ';
                 break;
             case 'bullet-points':
-                taskPrefix = 'Convert the following text into a clear list of bullet points: ';
+                taskPrefix = 'generate bullet points: ';
                 break;
             default:
                 return res.status(400).json({ error: 'Unsupported task.' });
