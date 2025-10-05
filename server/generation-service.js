@@ -1,30 +1,15 @@
-/**
- * A singleton class to manage the text generation pipeline.
- * Ensures the T5 model is loaded only once.
- */
+const axios = require('axios');
+
+// The URL for the Ollama service, read from environment variables.
+// This is set in the docker-compose.yml file.
+const OLLAMA_URL = process.env.OLLAMA_HOST || 'http://localhost:11434';
+const OLLAMA_MODEL = 'phi3:mini'; // The model we want to use
+
 class GenerationService {
-    static instance = null;
-    static model = 'Xenova/t5-small';
-    static task = 'text2text-generation';
-
     /**
-     * Retrieves the singleton instance of the generation pipeline.
-     * @returns {Promise<Function>} The text2text-generation pipeline function.
-     */
-    static async getInstance() {
-        if (this.instance === null) {
-            console.log('Initializing text generation model for the first time...');
-            const { pipeline } = await import('@xenova/transformers');
-            this.instance = await pipeline(this.task, this.model);
-            console.log('Text generation model loaded successfully.');
-        }
-        return this.instance;
-    }
-
-    /**
-     * Generates text based on a given input and a predefined task prefix.
+     * Generates text by sending a request to the dedicated Ollama service.
      * @param {string} inputText - The text to be transformed.
-     * @param {string} taskPrefix - The instruction for the model (e.g., "translate English to German: ").
+     * @param {string} taskPrefix - The user-defined prompt instruction.
      * @returns {Promise<string|null>} The generated text, or null on error.
      */
     static async generate(inputText, taskPrefix) {
@@ -32,27 +17,39 @@ class GenerationService {
             return null;
         }
 
-        const generator = await this.getInstance();
         const fullPrompt = `${taskPrefix}${inputText}`;
 
-        const result = await generator(fullPrompt, {
-            max_new_tokens: 1024, // Increased token limit for longer answers
-            temperature: 0.7,
-            repetition_penalty: 1.5,
-            no_repeat_ngram_size: 2,
-            early_stopping: true,
-        });
+        console.log(`Sending prompt to Ollama: ${fullPrompt}`);
 
-        // The result is an array of objects, we need the generated_text from the first one.
-        if (result && result.length > 0 && result[0].generated_text) {
-            return result[0].generated_text;
+        try {
+            const response = await axios.post(`${OLLAMA_URL}/api/generate`, {
+                model: OLLAMA_MODEL,
+                prompt: fullPrompt,
+                stream: false, // We want the full response at once
+                options: {
+                    temperature: 0.7,
+                    repetition_penalty: 1.5,
+                    num_predict: 1024, // Corresponds to max_new_tokens
+                }
+            });
+
+            // The response from Ollama contains the generated text in the 'response' field.
+            if (response.data && response.data.response) {
+                console.log('Received response from Ollama.');
+                return response.data.response.trim();
+            }
+
+            console.error('Ollama response did not contain expected data:', response.data);
+            return null;
+
+        } catch (error) {
+            console.error('Error communicating with Ollama service:', error.message);
+            if (error.response) {
+                console.error('Ollama response error data:', error.response.data);
+            }
+            return null;
         }
-
-        return null;
     }
 }
-
-// The model will be loaded on the first request now ("lazy loading").
-// GenerationService.getInstance();
 
 module.exports = GenerationService;
