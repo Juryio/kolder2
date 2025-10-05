@@ -22,19 +22,21 @@ class GenerationService {
     }
 
     /**
-     * Generates text based on a given input and a predefined task prefix.
+     * Generates text based on a given input and a professionally structured prompt.
      * @param {string} inputText - The text to be transformed.
-     * @param {string} taskPrefix - The instruction for the model.
+     * @param {string} taskInstruction - The user-defined instruction for the model.
      * @returns {Promise<string|null>} The generated text, or null on error.
      */
-    static async generate(inputText, taskPrefix) {
-        if (!inputText || !taskPrefix) {
+    static async generate(inputText, taskInstruction) {
+        if (!inputText || !taskInstruction) {
             return null;
         }
 
         const generator = await this.getInstance();
-        // T5-style models expect a simple concatenation of the instruction and the input text.
-        const fullPrompt = `${taskPrefix}${inputText}`;
+
+        // Use a clear, structured prompt to guide the model effectively.
+        // This template separates the instruction, the input text, and the desired output language.
+        const fullPrompt = `Anweisung: ${taskInstruction}\n\nEingabetext: "${inputText}"\n\nAntwort auf Deutsch:`;
 
         const result = await generator(fullPrompt, {
             max_new_tokens: 1024,
