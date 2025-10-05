@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 const mongoose = require('mongoose');
-const { Category, Snippet, Settings, StartingSnippet } = require('./models');
+const { Category, Snippet, Settings, StartingSnippet, Prompt } = require('./models');
 const EmbeddingService = require('./embedding-service');
 const GenerationService = require('./generation-service');
 
@@ -519,44 +519,83 @@ app.post('/api/testing/clear-db', async (req, res) => {
 
 // --- AI Services ---
 
+// --- Prompt Management CRUD ---
+
+app.get('/api/prompts', async (req, res) => {
+    try {
+        const prompts = await Prompt.find().sort({ name: 1 });
+        res.json(prompts);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch prompts.' });
+    }
+});
+
+app.post('/api/prompts', async (req, res) => {
+    try {
+        const { name, prompt } = req.body;
+        if (!name || !prompt) {
+            return res.status(400).json({ error: 'Name and prompt text are required.' });
+        }
+        const newPrompt = new Prompt({ name, prompt });
+        await newPrompt.save();
+        res.status(201).json(newPrompt);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to create prompt.' });
+    }
+});
+
+app.put('/api/prompts/:id', async (req, res) => {
+    try {
+        const { name, prompt } = req.body;
+        const updatedPrompt = await Prompt.findByIdAndUpdate(
+            req.params.id,
+            { name, prompt },
+            { new: true }
+        );
+        if (!updatedPrompt) {
+            return res.status(404).json({ error: 'Prompt not found.' });
+        }
+        res.json(updatedPrompt);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to update prompt.' });
+    }
+});
+
+app.delete('/api/prompts/:id', async (req, res) => {
+    try {
+        const deletedPrompt = await Prompt.findByIdAndDelete(req.params.id);
+        if (!deletedPrompt) {
+            return res.status(404).json({ error: 'Prompt not found.' });
+        }
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to delete prompt.' });
+    }
+});
+
+
 /**
  * @route POST /api/text/generate
- * @description Generates transformed text using the T5 model.
+ * @description Generates transformed text using a user-defined prompt.
  * @param {object} req.body - The request body.
  * @param {string} req.body.text - The input text to transform.
- * @param {string} req.body.task - The task to perform (e.g., "formalize").
+ * @param {string} req.body.promptId - The ID of the prompt to use.
  * @returns {object} 200 - An object containing the generated text.
- * @returns {object} 400 - An error object if the input is invalid.
- * @returns {object} 500 - An error object.
  */
 app.post('/api/text/generate', async (req, res) => {
     try {
-        const { text, task } = req.body;
+        const { text, promptId } = req.body;
 
-        if (!text || !task) {
-            return res.status(400).json({ error: 'Missing "text" or "task" in request body.' });
+        if (!text || !promptId) {
+            return res.status(400).json({ error: 'Missing "text" or "promptId" in request body.' });
         }
 
-        let taskPrefix;
-        switch (task) {
-            case 'formalize':
-                // Use a concise, direct command for the model
-                taskPrefix = 'formalize: ';
-                break;
-            case 'correct-grammar':
-                taskPrefix = 'grammar: ';
-                break;
-            case 'summarize':
-                taskPrefix = 'summarize: ';
-                break;
-            case 'bullet-points':
-                taskPrefix = 'generate bullet points: ';
-                break;
-            default:
-                return res.status(400).json({ error: 'Unsupported task.' });
+        const selectedPrompt = await Prompt.findById(promptId);
+        if (!selectedPrompt) {
+            return res.status(404).json({ error: 'Prompt not found.' });
         }
 
-        const generatedText = await GenerationService.generate(text, taskPrefix);
+        const generatedText = await GenerationService.generate(text, selectedPrompt.prompt);
 
         if (generatedText) {
             res.json({ generatedText });

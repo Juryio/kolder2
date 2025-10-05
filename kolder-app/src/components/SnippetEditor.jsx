@@ -47,7 +47,21 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [prompts, setPrompts] = useState([]);
   const quillRef = useRef(null);
+
+  // Fetch custom prompts when the editor opens
+  useEffect(() => {
+    const fetchPrompts = async () => {
+        try {
+            const response = await api.get('/prompts');
+            setPrompts(response.data);
+        } catch (error) {
+            console.error("Failed to fetch prompts", error);
+        }
+    };
+    fetchPrompts();
+  }, []);
 
   useEffect(() => {
     if (snippet) {
@@ -62,10 +76,10 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
   }, [snippet]);
 
   /**
-   * Calls the backend to perform a text transformation task.
-   * @param {string} task - The specific task to perform (e.g., 'formalize', 'summarize').
+   * Calls the backend to perform a text transformation using a selected prompt.
+   * @param {string} promptId - The ID of the custom prompt to use.
    */
-  const handleAITask = async (task) => {
+  const handleAITask = async (promptId) => {
     const editor = quillRef.current.getEditor();
     const textToTransform = editor.getText(); // Get plain text from Quill
     if (!textToTransform.trim()) return;
@@ -74,14 +88,14 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
     try {
       const response = await api.post('/text/generate', {
         text: textToTransform,
-        task: task, // Use the provided task parameter
+        promptId: promptId, // Send the selected prompt ID
       });
       if (response.data && response.data.generatedText) {
         // Replace the entire content with the transformed text
         setContent(response.data.generatedText);
       }
     } catch (error) {
-      console.error(`Error during AI task '${task}':`, error);
+      console.error(`Error during AI task with prompt ${promptId}:`, error);
       // Optionally, show an error toast to the user
     } finally {
       setIsGenerating(false);
@@ -190,10 +204,11 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
                         KI-Aktionen
                       </MenuButton>
                       <MenuList>
-                        <MenuItem onClick={() => handleAITask('formalize')}>Umschreiben (Sie)</MenuItem>
-                        <MenuItem onClick={() => handleAITask('correct-grammar')}>Grammatik korrigieren</MenuItem>
-                        <MenuItem onClick={() => handleAITask('summarize')}>Zusammenfassen</MenuItem>
-                        <MenuItem onClick={() => handleAITask('bullet-points')}>In Stichpunkte umwandeln</MenuItem>
+                        {prompts.map((prompt) => (
+                            <MenuItem key={prompt._id} onClick={() => handleAITask(prompt._id)}>
+                                {prompt.name}
+                            </MenuItem>
+                        ))}
                       </MenuList>
                     </Menu>
                     <Button size="xs" onClick={onBuilderOpen}>Insert Placeholder</Button>
