@@ -16,7 +16,12 @@ import {
   Tag,
   TagLabel,
   TagCloseButton,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
 } from '@chakra-ui/react';
+import { ChevronDownIcon } from '@chakra-ui/icons';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import './quill.css';
@@ -57,25 +62,26 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
   }, [snippet]);
 
   /**
-   * Calls the backend to transform the text to the formal "Sie" form.
+   * Calls the backend to perform a text transformation task.
+   * @param {string} task - The specific task to perform (e.g., 'formalize', 'summarize').
    */
-  const handleFormalizeText = async () => {
+  const handleAITask = async (task) => {
     const editor = quillRef.current.getEditor();
-    const textToFormalize = editor.getText(); // Get plain text from Quill
-    if (!textToFormalize.trim()) return;
+    const textToTransform = editor.getText(); // Get plain text from Quill
+    if (!textToTransform.trim()) return;
 
     setIsGenerating(true);
     try {
       const response = await api.post('/text/generate', {
-        text: textToFormalize,
-        task: 'formalize',
+        text: textToTransform,
+        task: task, // Use the provided task parameter
       });
       if (response.data && response.data.generatedText) {
-        // Replace the entire content with the formalized text
+        // Replace the entire content with the transformed text
         setContent(response.data.generatedText);
       }
     } catch (error) {
-      console.error("Error generating formal text:", error);
+      console.error(`Error during AI task '${task}':`, error);
       // Optionally, show an error toast to the user
     } finally {
       setIsGenerating(false);
@@ -173,14 +179,23 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
               <Flex justify="space-between" align="center">
                   <FormLabel mb="0">Content</FormLabel>
                   <HStack>
-                    <Button
+                    <Menu>
+                      <MenuButton
+                        as={Button}
                         size="xs"
-                        onClick={handleFormalizeText}
+                        rightIcon={<ChevronDownIcon />}
                         isLoading={isGenerating}
-                        loadingText="Umschreiben..."
-                    >
-                        Umschreiben (Sie)
-                    </Button>
+                        loadingText="Arbeite..."
+                      >
+                        KI-Aktionen
+                      </MenuButton>
+                      <MenuList>
+                        <MenuItem onClick={() => handleAITask('formalize')}>Umschreiben (Sie)</MenuItem>
+                        <MenuItem onClick={() => handleAITask('correct-grammar')}>Grammatik korrigieren</MenuItem>
+                        <MenuItem onClick={() => handleAITask('summarize')}>Zusammenfassen</MenuItem>
+                        <MenuItem onClick={() => handleAITask('bullet-points')}>In Stichpunkte umwandeln</MenuItem>
+                      </MenuList>
+                    </Menu>
                     <Button size="xs" onClick={onBuilderOpen}>Insert Placeholder</Button>
                   </HStack>
               </Flex>
