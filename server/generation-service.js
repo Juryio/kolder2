@@ -4,8 +4,8 @@
  */
 class GenerationService {
     static instance = null;
-    static model = 'Xenova/t5-base'; // Using the more powerful 'base' model
-    static task = 'text2text-generation';
+    static model = 'Xenova/Phi-3-mini-4k-instruct-gguf'; // Upgraded to Phi-3-mini
+    static task = 'text-generation'; // Phi-3 uses a different task type
 
     /**
      * Retrieves the singleton instance of the generation pipeline.
@@ -33,7 +33,9 @@ class GenerationService {
         }
 
         const generator = await this.getInstance();
-        const fullPrompt = `${taskPrefix}${inputText}`;
+
+        // Use the specific chat template for Phi-3 for optimal performance
+        const fullPrompt = `<|user|>\n${taskPrefix}\n\n${inputText}<|end|>\n<|assistant|>`;
 
         const result = await generator(fullPrompt, {
             max_new_tokens: 1024,
@@ -44,7 +46,10 @@ class GenerationService {
         });
 
         if (result && result.length > 0 && result[0].generated_text) {
-            return result[0].generated_text;
+            // The model's output includes the full prompt; we must parse the assistant's response.
+            const generatedText = result[0].generated_text;
+            const assistantResponse = generatedText.split('<|assistant|>').pop().trim();
+            return assistantResponse;
         }
 
         return null;
