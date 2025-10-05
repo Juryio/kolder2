@@ -4,7 +4,7 @@
  */
 class GenerationService {
     static instance = null;
-    static model = 'Xenova/Phi-3-mini-4k-instruct-gguf'; // Upgraded to Phi-3-mini
+    static model = 'Xenova/Phi-3-mini-4k-instruct'; // Corrected to the public model
     static task = 'text-generation'; // Phi-3 uses a different task type
 
     /**
