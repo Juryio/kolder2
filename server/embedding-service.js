@@ -48,8 +48,7 @@ class EmbeddingService {
     }
 }
 
-// Immediately attempt to initialize the model in the background when the server starts.
-// This "warms up" the service so that the first real request isn't delayed by model loading.
-EmbeddingService.getInstance();
+// The model will be loaded on the first request now ("lazy loading").
+// EmbeddingService.getInstance();
 
 module.exports = EmbeddingService;
