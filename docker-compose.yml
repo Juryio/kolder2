@@ -9,6 +9,7 @@ services:
       - "8448:8448"
     depends_on:
       - mongo
+      - languagetool
     environment:
       - MONGO_URI=mongodb://mongo:27017/kolderdb
       - PORT=8448
@@ -19,6 +20,12 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+
+  languagetool:
+    image: erikvl87/languagetool
+    ports:
+      - "8010:8010"
+    restart: always
 
 volumes:
   mongo-data:

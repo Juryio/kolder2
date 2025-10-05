@@ -14,6 +14,8 @@ import {
   VStack,
   Heading,
   useToast,
+  Switch,
+  HStack,
 } from '@chakra-ui/react';
 import axios from 'axios';
 
@@ -27,14 +29,16 @@ import axios from 'axios';
  * @returns {JSX.Element} The rendered component.
  */
 const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
-  const [currentSettings, setCurrentSettings] = useState({ title: '', icon: '', theme: { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' } });
+  const [currentSettings, setCurrentSettings] = useState({ title: '', icon: '', theme: { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' }, languageToolEnabled: false, languageToolApiUrl: '' });
 
   useEffect(() => {
     if (settings) {
       // Ensure theme object exists to avoid errors
       setCurrentSettings({
         ...settings,
-        theme: settings.theme || { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' }
+        theme: settings.theme || { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' },
+        languageToolEnabled: settings.languageToolEnabled || false,
+        languageToolApiUrl: settings.languageToolApiUrl || '',
       });
     }
   }, [settings, isOpen]);
@@ -44,8 +48,8 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
    * @param {React.ChangeEvent<HTMLInputElement>} e - The change event.
    */
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setCurrentSettings(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setCurrentSettings(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   /**
@@ -162,6 +166,30 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
                 display="none"
               />
             </Button>
+            <Heading size="sm" mt={4} alignSelf="flex-start">LanguageTool Settings</Heading>
+            <FormControl>
+                <HStack>
+                    <FormLabel htmlFor='languageToolEnabled' mb='0'>
+                        Enable LanguageTool
+                    </FormLabel>
+                    <Switch
+                        id='languageToolEnabled'
+                        name='languageToolEnabled'
+                        isChecked={currentSettings.languageToolEnabled}
+                        onChange={handleChange}
+                    />
+                </HStack>
+            </FormControl>
+            <FormControl>
+              <FormLabel>LanguageTool API URL</FormLabel>
+              <Input
+                name="languageToolApiUrl"
+                value={currentSettings.languageToolApiUrl}
+                onChange={handleChange}
+                placeholder="e.g., http://localhost:8010/v2/check"
+                isDisabled={!currentSettings.languageToolEnabled}
+              />
+            </FormControl>
             <Heading size="sm" mt={4} alignSelf="flex-start">Theme Colors</Heading>
              <FormControl>
               <FormLabel>Main Background</FormLabel>
