@@ -72,7 +72,7 @@ const settingsSchema = new mongoose.Schema({
         accentColor: { type: String, default: '#805AD5' },
     },
     languageToolEnabled: { type: Boolean, default: false },
-    languageToolApiUrl: { type: String, default: 'http://languagetool:8010/v2/check' },
+    languageToolApiUrl: { type: String, default: 'http://localhost:8010/v2/check' },
 });
 
 /**
