@@ -74,7 +74,6 @@ const settingsSchema = new mongoose.Schema({
     languageToolEnabled: { type: Boolean, default: false },
     languageToolApiUrl: { type: String, default: 'http://localhost:8010/v2/check' },
     languageToolLanguage: { type: String, default: 'auto' },
-    languageToolTone: { type: String, default: 'default' },
 });
 
 /**
