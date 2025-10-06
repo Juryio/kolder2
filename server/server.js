@@ -596,9 +596,22 @@ app.post('/api/languagetool/check', async (req, res) => {
 
         const language = settings.languageToolLanguage || 'auto';
 
+        let postData = `language=${language}&text=${encodeURIComponent(text)}`;
+
+        // Add tone preference if language is German and a tone is selected
+        if (language.startsWith('de') && settings.languageToolTone && settings.languageToolTone !== 'default') {
+            // This is an undocumented feature found on the LanguageTool forum,
+            // using motherTongue to set the form of address (Anrede).
+            if (settings.languageToolTone === 'formal') {
+                postData += '&motherTongue=de-DE-x-formal-addr';
+            } else if (settings.languageToolTone === 'informal') {
+                postData += '&motherTongue=de-DE-x-informal-addr';
+            }
+        }
+
         const response = await axios.post(
             settings.languageToolApiUrl,
-            `language=${language}&text=${encodeURIComponent(text)}`,
+            postData,
             { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         );
 
