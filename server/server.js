@@ -594,9 +594,11 @@ app.post('/api/languagetool/check', async (req, res) => {
             return res.status(400).json({ error: 'LanguageTool is not enabled or configured.' });
         }
 
+        const language = settings.languageToolLanguage || 'auto';
+
         const response = await axios.post(
             settings.languageToolApiUrl,
-            `language=en-US&text=${encodeURIComponent(text)}`,
+            `language=${language}&text=${encodeURIComponent(text)}`,
             { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         );
 

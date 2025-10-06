@@ -29,7 +29,7 @@ import axios from 'axios';
  * @returns {JSX.Element} The rendered component.
  */
 const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
-  const [currentSettings, setCurrentSettings] = useState({ title: '', icon: '', theme: { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' }, languageToolEnabled: false, languageToolApiUrl: '' });
+  const [currentSettings, setCurrentSettings] = useState({ title: '', icon: '', theme: { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' }, languageToolEnabled: false, languageToolApiUrl: '', languageToolLanguage: 'auto' });
 
   useEffect(() => {
     if (settings) {
@@ -39,6 +39,7 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
         theme: settings.theme || { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' },
         languageToolEnabled: settings.languageToolEnabled || false,
         languageToolApiUrl: settings.languageToolApiUrl || '',
+        languageToolLanguage: settings.languageToolLanguage || 'auto',
       });
     }
   }, [settings, isOpen]);
@@ -187,6 +188,16 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
                 value={currentSettings.languageToolApiUrl}
                 onChange={handleChange}
                 placeholder="e.g., http://localhost:8010/v2/check"
+                isDisabled={!currentSettings.languageToolEnabled}
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>LanguageTool Language</FormLabel>
+              <Input
+                name="languageToolLanguage"
+                value={currentSettings.languageToolLanguage}
+                onChange={handleChange}
+                placeholder="e.g., en-US, de-DE, auto"
                 isDisabled={!currentSettings.languageToolEnabled}
               />
             </FormControl>
