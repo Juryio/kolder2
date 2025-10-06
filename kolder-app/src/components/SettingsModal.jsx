@@ -16,7 +16,6 @@ import {
   useToast,
   Switch,
   HStack,
-  Select,
 } from '@chakra-ui/react';
 import axios from 'axios';
 
@@ -30,7 +29,7 @@ import axios from 'axios';
  * @returns {JSX.Element} The rendered component.
  */
 const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
-  const [currentSettings, setCurrentSettings] = useState({ title: '', icon: '', theme: { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' }, languageToolEnabled: false, languageToolApiUrl: '', languageToolLanguage: 'auto', languageToolTone: 'default' });
+  const [currentSettings, setCurrentSettings] = useState({ title: '', icon: '', theme: { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' }, languageToolEnabled: false, languageToolApiUrl: '', languageToolLanguage: 'auto' });
 
   useEffect(() => {
     if (settings) {
@@ -41,7 +40,6 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
         languageToolEnabled: settings.languageToolEnabled || false,
         languageToolApiUrl: settings.languageToolApiUrl || '',
         languageToolLanguage: settings.languageToolLanguage || 'auto',
-        languageToolTone: settings.languageToolTone || 'default',
       });
     }
   }, [settings, isOpen]);
@@ -202,19 +200,6 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
                 placeholder="e.g., en-US, de-DE, auto"
                 isDisabled={!currentSettings.languageToolEnabled}
               />
-            </FormControl>
-            <FormControl>
-              <FormLabel>LanguageTool Tone (for German)</FormLabel>
-              <Select
-                name="languageToolTone"
-                value={currentSettings.languageToolTone}
-                onChange={handleChange}
-                isDisabled={!currentSettings.languageToolEnabled || !currentSettings.languageToolLanguage?.startsWith('de')}
-              >
-                <option value="default">Default</option>
-                <option value="formal">Formal (Sie)</option>
-                <option value="informal">Informal (Du)</option>
-              </Select>
             </FormControl>
             <Heading size="sm" mt={4} alignSelf="flex-start">Theme Colors</Heading>
              <FormControl>
