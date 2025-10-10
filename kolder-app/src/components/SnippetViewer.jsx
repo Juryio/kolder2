@@ -250,7 +250,7 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
       </Flex>
 
       <VStack spacing="4" align="stretch">
-        <Box bg={settings?.theme.contentBackgroundColor} p={4} borderRadius="md">
+        <Box bg={settings?.theme.contentBackgroundColor} p={4} borderRadius="md" boxShadow="md">
           <Heading size="sm" mb="2">Compose Snippet</Heading>
           <FormControl>
             <FormLabel>Add Starting Snippet</FormLabel>
@@ -275,11 +275,10 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
           <Heading size="sm" mb="2">Preview</Heading>
           <Box
             p="4"
-            borderWidth="1px"
             borderRadius="md"
             minHeight="150px"
             bg={settings?.theme.contentBackgroundColor}
-            borderColor={settings?.theme.accentColor}
+            boxShadow="md"
             dangerouslySetInnerHTML={{ __html: output }}
           />
         </Box>
