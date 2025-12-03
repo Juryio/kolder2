@@ -16,7 +16,6 @@ import {
   useToast,
   Switch,
   HStack,
-  Select,
 } from '@chakra-ui/react';
 import axios from 'axios';
 
@@ -30,14 +29,14 @@ import axios from 'axios';
  * @returns {JSX.Element} The rendered component.
  */
 const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
-  const [currentSettings, setCurrentSettings] = useState({ title: '', icon: '', theme: { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' }, background: { type: 'gradient', gradientColors: [], imageUrl: '' }, languageToolEnabled: false, languageToolApiUrl: '', languageToolLanguage: 'auto' });
+  const [currentSettings, setCurrentSettings] = useState({ title: '', icon: '', theme: { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' }, languageToolEnabled: false, languageToolApiUrl: '', languageToolLanguage: 'auto' });
 
   useEffect(() => {
     if (settings) {
+      // Ensure theme object exists to avoid errors
       setCurrentSettings({
         ...settings,
         theme: settings.theme || { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' },
-        background: settings.background || { type: 'gradient', gradientColors: [], imageUrl: '' },
         languageToolEnabled: settings.languageToolEnabled || false,
         languageToolApiUrl: settings.languageToolApiUrl || '',
         languageToolLanguage: settings.languageToolLanguage || 'auto',
@@ -68,29 +67,6 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
         }
     }));
   }
-
-  const handleBackgroundChange = (e) => {
-    const { name, value } = e.target;
-    setCurrentSettings(prev => ({
-      ...prev,
-      background: {
-        ...prev.background,
-        [name]: value,
-      },
-    }));
-  };
-
-  const handleGradientColorChange = (index, value) => {
-    const newColors = [...currentSettings.background.gradientColors];
-    newColors[index] = value;
-    setCurrentSettings(prev => ({
-      ...prev,
-      background: {
-        ...prev.background,
-        gradientColors: newColors,
-      },
-    }));
-  };
 
   /**
    * Handles the click on the "Save" button.
@@ -157,7 +133,7 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent bg={currentSettings.theme?.contentBackgroundColor} color={currentSettings.theme?.textColor}>
         <ModalHeader>Application Settings</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
@@ -242,41 +218,10 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
               <FormLabel>Accent Color</FormLabel>
               <Input type="color" name="accentColor" value={currentSettings.theme.accentColor} onChange={handleThemeChange} />
             </FormControl>
-            <Heading size="sm" mt={4} alignSelf="flex-start">Background Settings</Heading>
-            <FormControl>
-              <FormLabel>Background Type</FormLabel>
-              <Select name="type" value={currentSettings.background?.type} onChange={handleBackgroundChange}>
-                <option value="gradient">Animated Gradient</option>
-                <option value="solid">Solid Color</option>
-                <option value="image">Image URL</option>
-              </Select>
-            </FormControl>
-            {currentSettings.background?.type === 'gradient' && (
-              <>
-                <FormControl>
-                  <FormLabel>Gradient Color 1</FormLabel>
-                  <Input type="color" value={currentSettings.background.gradientColors[0]} onChange={(e) => handleGradientColorChange(0, e.target.value)} />
-                </FormControl>
-                <FormControl>
-                  <FormLabel>Gradient Color 2</FormLabel>
-                  <Input type="color" value={currentSettings.background.gradientColors[1]} onChange={(e) => handleGradientColorChange(1, e.target.value)} />
-                </FormControl>
-                <FormControl>
-                  <FormLabel>Gradient Color 3</FormLabel>
-                  <Input type="color" value={currentSettings.background.gradientColors[2]} onChange={(e) => handleGradientColorChange(2, e.target.value)} />
-                </FormControl>
-              </>
-            )}
-            {currentSettings.background?.type === 'image' && (
-              <FormControl>
-                <FormLabel>Background Image URL</FormLabel>
-                <Input name="imageUrl" value={currentSettings.background.imageUrl} onChange={handleBackgroundChange} placeholder="Enter image URL" />
-              </FormControl>
-            )}
           </VStack>
         </ModalBody>
         <ModalFooter>
-          <Button mr={3} onClick={handleSave}>
+          <Button bg={currentSettings.theme.accentColor} mr={3} onClick={handleSave}>
             Save
           </Button>
           <Button onClick={onClose}>Cancel</Button>

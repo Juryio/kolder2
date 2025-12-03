@@ -18,7 +18,6 @@ import CategoryTreeWidget from './components/widgets/CategoryTreeWidget';
 import SnippetListWidget from './components/widgets/SnippetListWidget';
 import SnippetViewer from './components/SnippetViewer';
 import AddCategoryModal from './components/AddCategoryModal';
-import DynamicBackground from './components/DynamicBackground';
 
 const SettingsModal = lazy(() => import('./components/SettingsModal'));
 const AnalyticsPage = lazy(() => import('./components/AnalyticsPage'));
@@ -118,7 +117,7 @@ const MainView = ({
  * It manages the application's state and renders the different views.
  * @returns {JSX.Element} The rendered component.
  */
-function App({ initialSettings }) {
+function App() {
   const [categories, setCategories] = useState([]);
   const [snippets, setSnippets] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -126,7 +125,7 @@ function App({ initialSettings }) {
   const { isOpen: isAddCategoryOpen, onOpen: onAddCategoryOpen, onClose: onAddCategoryClose } = useDisclosure();
   const [addCategoryParentId, setAddCategoryParentId] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [settings, setSettings] = useState(initialSettings);
+  const [settings, setSettings] = useState(null);
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
   const { isOpen: isStartingSnippetOpen, onOpen: onStartingSnippetOpen, onClose: onStartingSnippetClose } = useDisclosure();
   const { isOpen: isCalendarOpen, onOpen: onCalendarOpen, onClose: onCalendarClose } = useDisclosure();
@@ -177,12 +176,14 @@ function App({ initialSettings }) {
   const fetchAllData = async () => {
       setLoading(true);
       try {
-        const [catResponse, snipResponse] = await Promise.all([
+        const [catResponse, snipResponse, settingsResponse] = await Promise.all([
           api.get('/categories'),
           api.get('/snippets'),
+          api.get('/settings'),
         ]);
         setCategories(catResponse.data);
         setSnippets(snipResponse.data);
+        setSettings(settingsResponse.data);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
