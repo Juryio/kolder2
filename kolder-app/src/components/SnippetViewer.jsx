@@ -21,7 +21,6 @@ import { ArrowBackIcon } from '@chakra-ui/icons';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import './quill.css'; // For consistent styling if needed
 
 const api = axios.create({
     baseURL: '/api',
