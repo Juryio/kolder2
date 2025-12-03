@@ -9,14 +9,24 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+:root {
+  --gradient-color-1: hsla(210, 80%, 50%, 0.3);
+  --gradient-color-2: hsla(280, 80%, 50%, 0.3);
+  --gradient-color-3: hsla(30, 80%, 50%, 0.3);
+  --animation-speed: 30s;
+  --animation-name: background-rotate;
+}
+
 body {
   margin: 0;
   background-color: #1A202C;
   overflow: hidden; /* Prevents scrollbars from the oversized pseudo-element */
   position: relative;
+  background-size: cover;
+  background-position: center;
 }
 
-body::before {
+body.animation-enabled::before {
   content: '';
   position: absolute;
   top: 50%;
@@ -26,16 +36,22 @@ body::before {
   height: 150%;
   z-index: -1;
   background-image:
-    radial-gradient(circle at 20% 20%, hsla(210, 80%, 50%, 0.3), transparent 30%),
-    radial-gradient(circle at 80% 30%, hsla(280, 80%, 50%, 0.3), transparent 30%),
-    radial-gradient(circle at 50% 80%, hsla(30, 80%, 50%, 0.3), transparent 30%);
+    radial-gradient(circle at 20% 20%, var(--gradient-color-1), transparent 30%),
+    radial-gradient(circle at 80% 30%, var(--gradient-color-2), transparent 30%),
+    radial-gradient(circle at 50% 80%, var(--gradient-color-3), transparent 30%);
   filter: blur(100px);
-  animation: background-pan 30s linear infinite;
+  animation: var(--animation-name) var(--animation-speed) linear infinite;
+}
+
+@keyframes background-rotate {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 @keyframes background-pan {
-  0% { transform: translate(-50%, -50%) rotate(0deg); }
-  100% { transform: translate(-50%, -50%) rotate(360deg); }
+  0% { transform: translate(-40%, -50%) rotate(0deg); }
+  50% { transform: translate(-60%, -50%) rotate(180deg); }
+  100% { transform: translate(-40%, -50%) rotate(360deg); }
 }
 
 #root {
