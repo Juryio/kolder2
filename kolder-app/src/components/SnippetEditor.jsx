@@ -17,11 +17,17 @@ import {
   TagCloseButton,
   Text,
   useToast,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
 } from '@chakra-ui/react';
+import { ChevronDownIcon } from '@chakra-ui/icons';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import './quill.css';
 import PlaceholderBuilderModal from './PlaceholderBuilderModal';
+import PlaceholderTemplateManager from './PlaceholderTemplateManager.jsx';
 import axios from 'axios';
 
 /**
@@ -35,13 +41,19 @@ import axios from 'axios';
  */
 const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
   const { isOpen: isBuilderOpen, onOpen: onBuilderOpen, onClose: onBuilderClose } = useDisclosure();
+  const { isOpen: isManagerOpen, onOpen: onManagerOpen, onClose: onManagerClose } = useDisclosure();
   const [name, setName] = useState('');
   const [content, setContent] = useState('');
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [suggestions, setSuggestions] = useState([]);
+  const [placeholderTemplates, setPlaceholderTemplates] = useState([]);
   const quillRef = useRef(null);
   const toast = useToast();
+
+  useEffect(() => {
+    fetchPlaceholderTemplates();
+  }, []);
 
   useEffect(() => {
     if (snippet) {
@@ -56,6 +68,48 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
     // Clear suggestions when the snippet changes or the editor is opened for a new one.
     setSuggestions([]);
   }, [snippet]);
+
+  const fetchPlaceholderTemplates = async () => {
+    try {
+      const response = await axios.get('/api/placeholder-templates');
+      setPlaceholderTemplates(response.data);
+    } catch (error) {
+      console.error('Failed to fetch placeholder templates:', error);
+      toast({
+        title: 'Error',
+        description: 'Could not load placeholder templates.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleInsertTemplate = (template) => {
+    let placeholderString = '';
+    const { type, config } = template;
+    const { name, displayType, options } = config;
+
+    switch (type) {
+      case 'text':
+        placeholderString = `{{${name}}}`;
+        break;
+      case 'date':
+        placeholderString = `{{date:${name}}}`;
+        break;
+      case 'choice':
+        placeholderString = `{{select:${name}:${displayType}:${options.join(':')}}}`;
+        break;
+      default:
+        return;
+    }
+
+    const editor = quillRef.current.getEditor();
+    const range = editor.getSelection(true);
+    if (range) {
+      editor.insertText(range.index, placeholderString);
+    }
+  };
 
   /**
    * Checks the grammar of the content using the backend API.
@@ -205,7 +259,24 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
                     {settings?.languageToolEnabled && (
                         <Button size="xs" onClick={handleGrammarCheck}>Check Grammar</Button>
                     )}
-                    <Button size="xs" onClick={onBuilderOpen}>Insert Placeholder</Button>
+                    <Menu>
+                      <MenuButton as={Button} size="xs" rightIcon={<ChevronDownIcon />}>
+                        Insert Template
+                      </MenuButton>
+                      <MenuList>
+                        {placeholderTemplates.length > 0 ? (
+                          placeholderTemplates.map((template) => (
+                            <MenuItem key={template._id} onClick={() => handleInsertTemplate(template)}>
+                              {template.name}
+                            </MenuItem>
+                          ))
+                        ) : (
+                          <MenuItem isDisabled>No templates saved yet</MenuItem>
+                        )}
+                      </MenuList>
+                    </Menu>
+                    <Button size="xs" onClick={onBuilderOpen}>Create New</Button>
+                    <Button size="xs" onClick={onManagerOpen}>Manage Templates</Button>
                 </HStack>
               </Flex>
               <ReactQuill ref={quillRef} theme="snow" value={content} onChange={(newContent) => { setContent(newContent); setSuggestions([]); }} style={{marginTop: '8px'}}/>
@@ -230,6 +301,13 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
         isOpen={isBuilderOpen}
         onClose={onBuilderClose}
         onInsert={handleInsertGeneratedPlaceholder}
+      />
+      <PlaceholderTemplateManager
+        isOpen={isManagerOpen}
+        onClose={() => {
+          onManagerClose();
+          fetchPlaceholderTemplates(); // Refresh the list in the editor
+        }}
       />
     </>
   );

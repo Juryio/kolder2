@@ -97,4 +97,27 @@ const Snippet = mongoose.model('Snippet', snippetSchema);
 const Settings = mongoose.model('Settings', settingsSchema);
 const StartingSnippet = mongoose.model('StartingSnippet', startingSnippetSchema);
 
-module.exports = { Category, Snippet, Settings, StartingSnippet };
+/**
+ * @typedef {object} PlaceholderTemplate
+ * @property {string} name - The name of the placeholder template.
+ * @property {string} description - A description of the placeholder template.
+ * @property {string} type - The type of the placeholder (e.g., 'radio', 'text').
+ * @property {object} config - The configuration object for the placeholder.
+ */
+
+/**
+ * Mongoose schema for a Placeholder Template.
+ * These are reusable, pre-configured placeholders.
+ * @type {mongoose.Schema<PlaceholderTemplate>}
+ */
+const placeholderTemplateSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    description: { type: String },
+    type: { type: String, required: true },
+    config: { type: mongoose.Schema.Types.Mixed, required: true },
+});
+
+const PlaceholderTemplate = mongoose.model('PlaceholderTemplate', placeholderTemplateSchema);
+
+
+module.exports = { Category, Snippet, Settings, StartingSnippet, PlaceholderTemplate };
