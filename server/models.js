@@ -71,6 +71,11 @@ const settingsSchema = new mongoose.Schema({
         textColor: { type: String, default: '#EDF2F7' },
         accentColor: { type: String, default: '#805AD5' },
     },
+    background: {
+        type: { type: String, enum: ['gradient', 'solid', 'image'], default: 'gradient' },
+        gradientColors: { type: [String], default: ['hsla(210, 80%, 50%, 0.3)', 'hsla(280, 80%, 50%, 0.3)', 'hsla(30, 80%, 50%, 0.3)'] },
+        imageUrl: { type: String, default: '' },
+    },
     languageToolEnabled: { type: Boolean, default: false },
     languageToolApiUrl: { type: String, default: 'http://localhost:8010/v2/check' },
     languageToolLanguage: { type: String, default: 'auto' },
