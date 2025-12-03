@@ -71,6 +71,11 @@ const settingsSchema = new mongoose.Schema({
         textColor: { type: String, default: '#EDF2F7' },
         accentColor: { type: String, default: '#805AD5' },
     },
+    background: {
+        type: { type: String, enum: ['gradient', 'solid', 'image'], default: 'gradient' },
+        gradientColors: { type: [String], default: ['hsla(210, 80%, 50%, 0.3)', 'hsla(280, 80%, 50%, 0.3)', 'hsla(30, 80%, 50%, 0.3)'] },
+        imageUrl: { type: String, default: '' },
+    },
     languageToolEnabled: { type: Boolean, default: false },
     languageToolApiUrl: { type: String, default: 'http://localhost:8010/v2/check' },
     languageToolLanguage: { type: String, default: 'auto' },
@@ -97,4 +102,27 @@ const Snippet = mongoose.model('Snippet', snippetSchema);
 const Settings = mongoose.model('Settings', settingsSchema);
 const StartingSnippet = mongoose.model('StartingSnippet', startingSnippetSchema);
 
-module.exports = { Category, Snippet, Settings, StartingSnippet };
+/**
+ * @typedef {object} PlaceholderTemplate
+ * @property {string} name - The name of the placeholder template.
+ * @property {string} description - A description of the placeholder template.
+ * @property {string} type - The type of the placeholder (e.g., 'radio', 'text').
+ * @property {object} config - The configuration object for the placeholder.
+ */
+
+/**
+ * Mongoose schema for a Placeholder Template.
+ * These are reusable, pre-configured placeholders.
+ * @type {mongoose.Schema<PlaceholderTemplate>}
+ */
+const placeholderTemplateSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    description: { type: String },
+    type: { type: String, required: true },
+    config: { type: mongoose.Schema.Types.Mixed, required: true },
+});
+
+const PlaceholderTemplate = mongoose.model('PlaceholderTemplate', placeholderTemplateSchema);
+
+
+module.exports = { Category, Snippet, Settings, StartingSnippet, PlaceholderTemplate };

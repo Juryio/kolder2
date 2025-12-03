@@ -11,6 +11,31 @@
 
 body {
   margin: 0;
+  background-color: #1A202C;
+  overflow: hidden; /* Prevents scrollbars from the oversized pseudo-element */
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 150%;
+  height: 150%;
+  z-index: -1;
+  background-image:
+    radial-gradient(circle at 20% 20%, hsla(210, 80%, 50%, 0.3), transparent 30%),
+    radial-gradient(circle at 80% 30%, hsla(280, 80%, 50%, 0.3), transparent 30%),
+    radial-gradient(circle at 50% 80%, hsla(30, 80%, 50%, 0.3), transparent 30%);
+  filter: blur(100px);
+  animation: background-pan 30s linear infinite;
+}
+
+@keyframes background-pan {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 #root {

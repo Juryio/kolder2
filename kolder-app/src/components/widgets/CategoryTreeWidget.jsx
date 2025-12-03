@@ -9,22 +9,14 @@ import CategoryTree from '../CategoryTree';
  */
 const CategoryTreeWidget = (props) => {
     return (
-        <Box
-            bg={props.settings?.theme.contentBackgroundColor}
-            boxShadow="md"
-            borderRadius="lg"
-            p={4}
-            h="100%"
-            display="flex"
-            flexDirection="column"
-        >
+        <>
             <Flex justifyContent="space-between" alignItems="center" mb={2}>
                 <Heading size="md">Categories</Heading>
             </Flex>
-            <Box flex="1" overflowY="auto">
+            <Box flex="1" overflowY="auto" mt={4}>
                 <CategoryTree {...props} />
             </Box>
-        </Box>
+        </>
     );
 };
 

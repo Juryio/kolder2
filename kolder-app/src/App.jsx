@@ -18,6 +18,7 @@ import CategoryTreeWidget from './components/widgets/CategoryTreeWidget';
 import SnippetListWidget from './components/widgets/SnippetListWidget';
 import SnippetViewer from './components/SnippetViewer';
 import AddCategoryModal from './components/AddCategoryModal';
+import DynamicBackground from './components/DynamicBackground';
 
 const SettingsModal = lazy(() => import('./components/SettingsModal'));
 const AnalyticsPage = lazy(() => import('./components/AnalyticsPage'));
@@ -59,7 +60,16 @@ const MainView = ({
 }) => {
     return (
         <Flex w="100%" p="4" flex="1">
-            <Box flex="3" mr="4">
+            <Flex
+              flex="3"
+              mr="4"
+              p="4"
+              bg="rgba(255, 255, 255, 0.05)"
+              backdropFilter="blur(10px)"
+              borderRadius="lg"
+              border="1px solid rgba(255, 255, 255, 0.1)"
+              direction="column"
+            >
                 <CategoryTreeWidget
                     settings={settings}
                     categories={categories}
@@ -73,8 +83,16 @@ const MainView = ({
                     onMove={onMoveCategory}
                     onMoveSnippet={onMoveSnippet}
                 />
-            </Box>
-            <Box flex="9">
+            </Flex>
+            <Flex
+              flex="9"
+              p="4"
+              bg="rgba(255, 255, 255, 0.05)"
+              backdropFilter="blur(10px)"
+              borderRadius="lg"
+              border="1px solid rgba(255, 255, 255, 0.1)"
+              direction="column"
+            >
                 {selectedSnippet ? (
                     <SnippetViewer snippet={selectedSnippet} onBack={onBackToList} settings={settings} />
                 ) : (
@@ -90,7 +108,7 @@ const MainView = ({
                         settings={settings}
                     />
                 )}
-            </Box>
+            </Flex>
         </Flex>
     );
 };
@@ -100,7 +118,7 @@ const MainView = ({
  * It manages the application's state and renders the different views.
  * @returns {JSX.Element} The rendered component.
  */
-function App() {
+function App({ initialSettings }) {
   const [categories, setCategories] = useState([]);
   const [snippets, setSnippets] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -108,7 +126,7 @@ function App() {
   const { isOpen: isAddCategoryOpen, onOpen: onAddCategoryOpen, onClose: onAddCategoryClose } = useDisclosure();
   const [addCategoryParentId, setAddCategoryParentId] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [settings, setSettings] = useState(null);
+  const [settings, setSettings] = useState(initialSettings);
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
   const { isOpen: isStartingSnippetOpen, onOpen: onStartingSnippetOpen, onClose: onStartingSnippetClose } = useDisclosure();
   const { isOpen: isCalendarOpen, onOpen: onCalendarOpen, onClose: onCalendarClose } = useDisclosure();
@@ -159,14 +177,12 @@ function App() {
   const fetchAllData = async () => {
       setLoading(true);
       try {
-        const [catResponse, snipResponse, settingsResponse] = await Promise.all([
+        const [catResponse, snipResponse] = await Promise.all([
           api.get('/categories'),
           api.get('/snippets'),
-          api.get('/settings'),
         ]);
         setCategories(catResponse.data);
         setSnippets(snipResponse.data);
-        setSettings(settingsResponse.data);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -414,8 +430,19 @@ function App() {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <Flex direction="column" minH="100vh" w="100%" bg={settings?.theme.backgroundColor} color={settings?.theme.textColor}>
-        <Flex as="header" p="4" borderBottomWidth="1px" alignItems="center" borderColor={settings?.theme.contentBackgroundColor}>
+      <DynamicBackground settings={settings} />
+      <Flex direction="column" minH="100vh" w="100%">
+        <Flex
+          as="header"
+          p="4"
+          alignItems="center"
+          bg="rgba(255, 255, 255, 0.1)"
+          backdropFilter="blur(10px)"
+          borderBottom="1px solid rgba(255, 255, 255, 0.2)"
+          position="sticky"
+          top="0"
+          zIndex="docked"
+        >
           {settings?.icon && <Image src={settings.icon} alt="App Icon" boxSize="32px" mr={3} />}
         <Heading size="md">{settings?.title || 'Kolder'}</Heading>
         <Spacer />
@@ -424,28 +451,24 @@ function App() {
             icon={<ViewIcon />}
             aria-label="Analytics"
             mr={2}
-            bg={settings?.theme.accentColor}
         />
         <IconButton
             onClick={onStartingSnippetOpen}
             icon={<AddIcon />}
             aria-label="Manage Starting Snippets"
             mr={2}
-            bg={settings?.theme.accentColor}
         />
         <IconButton
             onClick={onCalendarOpen}
             icon={<CalendarIcon />}
             aria-label="Open Calendar"
             mr={2}
-            bg={settings?.theme.accentColor}
         />
         <IconButton
             onClick={onSettingsOpen}
             icon={<SettingsIcon />}
             aria-label="Settings"
             mr={2}
-            bg={settings?.theme.accentColor}
         />
       </Flex>
       <Suspense fallback={<Flex justify="center" align="center" flex="1"><Spinner size="xl" /></Flex>}>
