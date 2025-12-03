@@ -9,22 +9,14 @@ import SnippetList from '../SnippetList';
  */
 const SnippetListWidget = (props) => {
     return (
-        <Box
-            bg={props.settings?.theme.contentBackgroundColor}
-            boxShadow="md"
-            borderRadius="lg"
-            p={4}
-            h="100%"
-            display="flex"
-            flexDirection="column"
-        >
+        <>
             <Flex justifyContent="space-between" alignItems="center" mb={2}>
                 <Heading size="md">Snippets</Heading>
             </Flex>
-            <Box flex="1" overflowY="auto">
+            <Box flex="1" overflowY="auto" mt={4}>
                 <SnippetList {...props} />
             </Box>
-        </Box>
+        </>
     );
 };
 

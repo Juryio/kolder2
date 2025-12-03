@@ -59,7 +59,16 @@ const MainView = ({
 }) => {
     return (
         <Flex w="100%" p="4" flex="1">
-            <Box flex="3" mr="4">
+            <Flex
+              flex="3"
+              mr="4"
+              p="4"
+              bg="rgba(255, 255, 255, 0.05)"
+              backdropFilter="blur(10px)"
+              borderRadius="lg"
+              border="1px solid rgba(255, 255, 255, 0.1)"
+              direction="column"
+            >
                 <CategoryTreeWidget
                     settings={settings}
                     categories={categories}
@@ -73,8 +82,16 @@ const MainView = ({
                     onMove={onMoveCategory}
                     onMoveSnippet={onMoveSnippet}
                 />
-            </Box>
-            <Box flex="9">
+            </Flex>
+            <Flex
+              flex="9"
+              p="4"
+              bg="rgba(255, 255, 255, 0.05)"
+              backdropFilter="blur(10px)"
+              borderRadius="lg"
+              border="1px solid rgba(255, 255, 255, 0.1)"
+              direction="column"
+            >
                 {selectedSnippet ? (
                     <SnippetViewer snippet={selectedSnippet} onBack={onBackToList} settings={settings} />
                 ) : (
@@ -90,7 +107,7 @@ const MainView = ({
                         settings={settings}
                     />
                 )}
-            </Box>
+            </Flex>
         </Flex>
     );
 };
@@ -414,8 +431,18 @@ function App() {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <Flex direction="column" minH="100vh" w="100%" bg={settings?.theme.backgroundColor} color={settings?.theme.textColor}>
-        <Flex as="header" p="4" borderBottomWidth="1px" alignItems="center" borderColor={settings?.theme.contentBackgroundColor}>
+      <Flex direction="column" minH="100vh" w="100%">
+        <Flex
+          as="header"
+          p="4"
+          alignItems="center"
+          bg="rgba(255, 255, 255, 0.1)"
+          backdropFilter="blur(10px)"
+          borderBottom="1px solid rgba(255, 255, 255, 0.2)"
+          position="sticky"
+          top="0"
+          zIndex="docked"
+        >
           {settings?.icon && <Image src={settings.icon} alt="App Icon" boxSize="32px" mr={3} />}
         <Heading size="md">{settings?.title || 'Kolder'}</Heading>
         <Spacer />
@@ -424,28 +451,24 @@ function App() {
             icon={<ViewIcon />}
             aria-label="Analytics"
             mr={2}
-            bg={settings?.theme.accentColor}
         />
         <IconButton
             onClick={onStartingSnippetOpen}
             icon={<AddIcon />}
             aria-label="Manage Starting Snippets"
             mr={2}
-            bg={settings?.theme.accentColor}
         />
         <IconButton
             onClick={onCalendarOpen}
             icon={<CalendarIcon />}
             aria-label="Open Calendar"
             mr={2}
-            bg={settings?.theme.accentColor}
         />
         <IconButton
             onClick={onSettingsOpen}
             icon={<SettingsIcon />}
             aria-label="Settings"
             mr={2}
-            bg={settings?.theme.accentColor}
         />
       </Flex>
       <Suspense fallback={<Flex justify="center" align="center" flex="1"><Spinner size="xl" /></Flex>}>
