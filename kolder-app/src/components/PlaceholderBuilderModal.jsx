@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Modal,
   ModalOverlay,
@@ -33,6 +34,9 @@ const PlaceholderBuilderModal = ({ isOpen, onClose, onInsert }) => {
   const [name, setName] = useState('');
   const [options, setOptions] = useState(['']);
   const [displayType, setDisplayType] = useState('dropdown');
+  const [isSaveModalOpen, setSaveModalOpen] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [templateDescription, setTemplateDescription] = useState('');
 
   // Reset state when modal opens
   useEffect(() => {
@@ -81,6 +85,59 @@ const PlaceholderBuilderModal = ({ isOpen, onClose, onInsert }) => {
     onInsert(placeholderString);
     onClose();
   };
+
+  const openSaveModal = () => {
+    if (!name.trim()) {
+      alert('Placeholder Name is required to save a template.');
+      return;
+    }
+    setSaveModalOpen(true);
+  };
+
+  const closeSaveModal = () => {
+    setSaveModalOpen(false);
+    setTemplateName('');
+    setTemplateDescription('');
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!templateName.trim()) {
+      alert('Template Name is required.');
+      return;
+    }
+
+    const config = {
+      name: name.trim().replace(/\s+/g, '_'),
+    };
+
+    if (type === 'choice') {
+      const validOptions = options.map(o => o.trim()).filter(o => o);
+      if (validOptions.length === 0) {
+        alert('At least one option is required for a choice placeholder.');
+        return;
+      }
+      config.displayType = displayType;
+      config.options = validOptions;
+    }
+
+    const templateData = {
+      name: templateName,
+      description: templateDescription,
+      type: type,
+      config: config
+    };
+
+    try {
+      await axios.post('/api/placeholder-templates', templateData);
+      closeSaveModal();
+      // Optionally, show a success message to the user
+      alert('Template saved successfully!');
+    } catch (error) {
+      console.error('Failed to save template:', error);
+      alert('Failed to save template. Please check the console for details.');
+    }
+  };
+
 
   /**
    * Renders the configuration UI for the selected placeholder type.
@@ -193,12 +250,42 @@ const PlaceholderBuilderModal = ({ isOpen, onClose, onInsert }) => {
           </VStack>
         </ModalBody>
         <ModalFooter>
+          <Button colorScheme="green" mr={3} onClick={openSaveModal}>
+            Save as Template
+          </Button>
           <Button colorScheme="blue" mr={3} onClick={handleInsert}>
             Insert
           </Button>
           <Button onClick={onClose}>Cancel</Button>
         </ModalFooter>
       </ModalContent>
+
+      {/* Save Template Modal */}
+      <Modal isOpen={isSaveModalOpen} onClose={closeSaveModal}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Save Placeholder Template</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4}>
+              <FormControl isRequired>
+                <FormLabel>Template Name</FormLabel>
+                <Input value={templateName} onChange={(e) => setTemplateName(e.target.value)} placeholder="e.g., Anrede Radio Buttons" />
+              </FormControl>
+              <FormControl>
+                <FormLabel>Description</FormLabel>
+                <Input value={templateDescription} onChange={(e) => setTemplateDescription(e.target.value)} placeholder="A brief description" />
+              </FormControl>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={handleSaveTemplate}>
+              Save
+            </Button>
+            <Button onClick={closeSaveModal}>Cancel</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Modal>
   );
 };
