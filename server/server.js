@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 const mongoose = require('mongoose');
-const { Category, Snippet, Settings, StartingSnippet } = require('./models');
+const { Category, Snippet, Settings, StartingSnippet, PlaceholderTemplate } = require('./models');
 const EmbeddingService = require('./embedding-service');
 const axios = require('axios');
 
@@ -497,6 +497,71 @@ app.delete('/api/starting-snippets/:id', async (req, res) => {
         res.status(204).send();
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
+
+
+// --- API Endpoints for Placeholder Templates ---
+
+/**
+ * @route GET /api/placeholder-templates
+ * @description Get all placeholder templates.
+ * @returns {Array<PlaceholderTemplate>} 200 - A list of all placeholder templates.
+ * @returns {object} 500 - An error object.
+ */
+app.get('/api/placeholder-templates', async (req, res) => {
+    try {
+        const templates = await PlaceholderTemplate.find();
+        res.json(templates);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/**
+ * @route POST /api/placeholder-templates
+ * @description Create a new placeholder template.
+ * @param {object} req.body - The placeholder template to create.
+ * @returns {PlaceholderTemplate} 201 - The newly created placeholder template.
+ * @returns {object} 500 - An error object.
+ */
+app.post('/api/placeholder-templates', async (req, res) => {
+    try {
+        const newTemplate = new PlaceholderTemplate(req.body);
+        await newTemplate.save();
+        res.status(201).json(newTemplate);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/**
+ * @route PUT /api/placeholder-templates/:id
+ * @description Update a placeholder template.
+ * @param {string} req.params.id - The ID of the placeholder template to update.
+ * @param {object} req.body - The fields to update.
+ * @returns {PlaceholderTemplate} 200 - The updated placeholder template.
+ * @returns {object} 500 - An error object.
+ */
+app.put('/api/placeholder-templates/:id', async (req, res) => {
+    try {
+        const updatedTemplate = await PlaceholderTemplate.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true }
+        );
+        res.json(updatedTemplate);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/**
+ * @route DELETE /api/placeholder-templates/:id
+ * @description Delete a placeholder template.
+ * @param {string} req.params.id - The ID of the placeholder template to delete.
+ * @returns {void} 204 - No content.
+ * @returns {object} 500 - An error object.
+ */
+app.delete('/api/placeholder-templates/:id', async (req, res) => {
+    try {
+        await PlaceholderTemplate.findByIdAndDelete(req.params.id);
+        res.status(204).send();
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 
 app.post('/api/testing/clear-db', async (req, res) => {
     try {
