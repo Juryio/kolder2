@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box,
   FormControl,
@@ -17,13 +17,10 @@ import {
   TagCloseButton,
   Text,
   useToast,
-  IconButton,
 } from '@chakra-ui/react';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import { PlaceholderNode } from '../tiptap/PlaceholderNode.js';
-import { FaBold, FaItalic, FaStrikethrough } from 'react-icons/fa';
-
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import './quill.css';
 import PlaceholderBuilderModal from './PlaceholderBuilderModal';
 import axios from 'axios';
 
@@ -36,21 +33,6 @@ import axios from 'axios';
  * @param {object} props.settings - The application settings, used for theming.
  * @returns {JSX.Element} The rendered component.
  */
-const TiptapToolbar = ({ editor }) => {
-    if (!editor) {
-        return null;
-    }
-
-    return (
-        <HStack border="1px" borderColor="gray.600" p={1} borderRadius="md" mb={2} wrap="wrap">
-            <IconButton icon={<FaBold />} aria-label="Bold" onClick={() => editor.chain().focus().toggleBold().run()} variant={editor.isActive('bold') ? 'solid' : 'ghost'} size="sm" />
-            <IconButton icon={<FaItalic />} aria-label="Italic" onClick={() => editor.chain().focus().toggleItalic().run()} variant={editor.isActive('italic') ? 'solid' : 'ghost'} size="sm" />
-            <IconButton icon={<FaStrikethrough />} aria-label="Strike" onClick={() => editor.chain().focus().toggleStrike().run()} variant={editor.isActive('strike') ? 'solid' : 'ghost'} size="sm" />
-        </HStack>
-    );
-};
-
-
 const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
   const { isOpen: isBuilderOpen, onOpen: onBuilderOpen, onClose: onBuilderClose } = useDisclosure();
   const [name, setName] = useState('');
@@ -58,28 +40,13 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [suggestions, setSuggestions] = useState([]);
+  const quillRef = useRef(null);
   const toast = useToast();
-
-    const editor = useEditor({
-        extensions: [
-            StarterKit,
-            PlaceholderNode,
-        ],
-        content: content,
-        onUpdate: ({ editor }) => {
-            setContent(editor.getHTML());
-            setSuggestions([]); // Clear suggestions on edit
-        },
-    });
 
   useEffect(() => {
     if (snippet) {
       setName(snippet.name || '');
-      const newContent = snippet.content || '';
-      setContent(newContent);
-      if (editor) {
-        editor.commands.setContent(newContent);
-      }
+      setContent(snippet.content || '');
       setTags(snippet.tags || []);
     } else {
       setName('');
@@ -88,13 +55,15 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
     }
     // Clear suggestions when the snippet changes or the editor is opened for a new one.
     setSuggestions([]);
-  }, [snippet, editor]);
+  }, [snippet]);
 
   /**
    * Checks the grammar of the content using the backend API.
    */
   const handleGrammarCheck = async () => {
-    if (!editor) return;
+    if (!quillRef.current) return;
+    const editor = quillRef.current.getEditor();
+    // The API expects plain text.
     const text = editor.getText();
 
     if (!text.trim()) {
@@ -130,18 +99,15 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
   };
 
   /**
-   * Applies a grammar suggestion to the Tiptap editor.
+   * Applies a grammar suggestion to the Quill editor.
    * @param {object} suggestion - The suggestion object from LanguageTool.
    * @param {string} replacementValue - The string to replace the error with.
    */
   const applySuggestion = (suggestion, replacementValue) => {
-    if (!editor) return;
-    const { offset, length } = suggestion;
-    // Tiptap's ranges are 1-based for content, so we adjust.
-    const from = offset + 1;
-    const to = offset + length + 1;
-
-    editor.chain().focus().insertContentAt({ from, to }, replacementValue).run();
+    const editor = quillRef.current.getEditor();
+    // This delta operation uses offsets from the plain text version of the content.
+    // It works well for text but may be inaccurate with complex, nested formatting.
+    editor.updateContents(new (ReactQuill.Quill.import('delta'))().retain(suggestion.offset).delete(suggestion.length).insert(replacementValue), 'user');
     setSuggestions(prev => prev.filter(s => s !== suggestion));
     toast({ title: 'Suggestion applied', status: 'success', duration: 2000, isClosable: true });
   };
@@ -150,20 +116,19 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
    * Calls the onSave prop and closes the editor.
    */
   const handleSave = () => {
-    // Ensure we get the latest HTML from the editor
-    const latestContent = editor ? editor.getHTML() : content;
-    onSave({ ...snippet, name, content: latestContent, tags });
+    onSave({ ...snippet, name, content, tags });
     onClose();
   };
 
   /**
-   * Inserts a placeholder string into the Tiptap editor at the current cursor position.
+   * Inserts a placeholder string into the Quill editor at the current cursor position.
    * @param {string} placeholderString - The placeholder string to insert.
    */
   const handleInsertGeneratedPlaceholder = (placeholderString) => {
-    if (editor) {
-      // Insert the text which will be converted by the input rule
-      editor.chain().focus().insertContent(`{{${placeholderString}}}`).run();
+    const editor = quillRef.current.getEditor();
+    const range = editor.getSelection(true);
+    if (range) {
+        editor.insertText(range.index, placeholderString);
     }
   };
 
@@ -234,7 +199,7 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
               </Wrap>
           </FormControl>
           <FormControl>
-              <Flex justify="space-between" align="center" mb={1}>
+              <Flex justify="space-between" align="center">
                 <FormLabel mb="0">Content</FormLabel>
                 <HStack>
                     {settings?.languageToolEnabled && (
@@ -243,10 +208,7 @@ const SnippetEditor = ({ onClose, onSave, snippet, settings }) => {
                     <Button size="xs" onClick={onBuilderOpen}>Insert Placeholder</Button>
                 </HStack>
               </Flex>
-                <TiptapToolbar editor={editor} />
-                <Box border="1px" borderColor="gray.600" borderRadius="md" minH="200px">
-                    <EditorContent editor={editor} style={{ outline: 'none', padding: '8px' }} />
-                </Box>
+              <ReactQuill ref={quillRef} theme="snow" value={content} onChange={(newContent) => { setContent(newContent); setSuggestions([]); }} style={{marginTop: '8px'}}/>
           </FormControl>
         </VStack>
         <Flex mt={4} justify="flex-end">
