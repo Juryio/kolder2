@@ -430,7 +430,6 @@ function App({ initialSettings }) {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <DynamicBackground settings={settings} />
       <Flex direction="column" minH="100vh" w="100%">
         <Flex
           as="header"
