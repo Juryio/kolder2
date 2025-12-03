@@ -205,6 +205,42 @@ function App() {
     }
   }, [settings]);
 
+  useEffect(() => {
+    if (settings?.theme) {
+      const {
+        backgroundColor,
+        gradientColor1,
+        gradientColor2,
+        gradientColor3,
+        animationEnabled,
+        animationSpeed,
+        animationType,
+        customBackground
+      } = settings.theme;
+
+      const root = document.documentElement;
+      root.style.setProperty('--gradient-color-1', gradientColor1);
+      root.style.setProperty('--gradient-color-2', gradientColor2);
+      root.style.setProperty('--gradient-color-3', gradientColor3);
+      root.style.setProperty('--animation-speed', `${animationSpeed}s`);
+      root.style.setProperty('--animation-name', `background-${animationType}`);
+
+      document.body.style.backgroundColor = backgroundColor;
+
+      if (customBackground) {
+        document.body.style.backgroundImage = `url(${customBackground})`;
+        document.body.classList.remove('animation-enabled');
+      } else {
+        document.body.style.backgroundImage = 'none';
+        if (animationEnabled) {
+          document.body.classList.add('animation-enabled');
+        } else {
+          document.body.classList.remove('animation-enabled');
+        }
+      }
+    }
+  }, [settings]);
+
   /**
    * Saves the application settings.
    * @param {object} newSettings - The new settings object.

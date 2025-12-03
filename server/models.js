@@ -70,6 +70,13 @@ const settingsSchema = new mongoose.Schema({
         contentBackgroundColor: { type: String, default: '#2D3748' },
         textColor: { type: String, default: '#EDF2F7' },
         accentColor: { type: String, default: '#805AD5' },
+        gradientColor1: { type: String, default: '#6B46C1' },
+        gradientColor2: { type: String, default: '#D53F8C' },
+        gradientColor3: { type: String, default: '#ED8936' },
+        animationEnabled: { type: Boolean, default: true },
+        animationSpeed: { type: Number, default: 30 },
+        animationType: { type: String, default: 'rotate' },
+        customBackground: { type: String, default: '' }
     },
     languageToolEnabled: { type: Boolean, default: false },
     languageToolApiUrl: { type: String, default: 'http://localhost:8010/v2/check' },

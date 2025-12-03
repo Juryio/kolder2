@@ -42,6 +42,24 @@ const theme = extendTheme({
         },
       },
     },
+    Select: {
+      baseStyle: {
+        field: {
+          bg: 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+        },
+      },
+      parts: ['menu'],
+      variants: {
+        outline: {
+          menu: {
+            bg: 'rgba(45, 55, 72, 0.8)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+          },
+        },
+      },
+    },
     Modal: {
       baseStyle: {
         dialog: {

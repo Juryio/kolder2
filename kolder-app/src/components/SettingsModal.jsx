@@ -16,6 +16,12 @@ import {
   useToast,
   Switch,
   HStack,
+  Select,
+  Slider,
+  SliderTrack,
+  SliderFilledTrack,
+  SliderThumb,
+  Box,
 } from '@chakra-ui/react';
 import axios from 'axios';
 
@@ -29,14 +35,16 @@ import axios from 'axios';
  * @returns {JSX.Element} The rendered component.
  */
 const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
-  const [currentSettings, setCurrentSettings] = useState({ title: '', icon: '', theme: { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' }, languageToolEnabled: false, languageToolApiUrl: '', languageToolLanguage: 'auto' });
+  const [currentSettings, setCurrentSettings] = useState({ title: '', icon: '', theme: { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '', gradientColor1: '', gradientColor2: '', gradientColor3: '', animationEnabled: true, animationSpeed: 30, animationType: 'rotate', customBackground: '' }, languageToolEnabled: false, languageToolApiUrl: '', languageToolLanguage: 'auto' });
+  const fileInputRef = useRef(null);
+  const toast = useToast();
 
   useEffect(() => {
     if (settings) {
       // Ensure theme object exists to avoid errors
       setCurrentSettings({
         ...settings,
-        theme: settings.theme || { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '' },
+        theme: settings.theme || { backgroundColor: '', contentBackgroundColor: '', textColor: '', accentColor: '', gradientColor1: '', gradientColor2: '', gradientColor3: '', animationEnabled: true, animationSpeed: 30, animationType: 'rotate', customBackground: '' },
         languageToolEnabled: settings.languageToolEnabled || false,
         languageToolApiUrl: settings.languageToolApiUrl || '',
         languageToolLanguage: settings.languageToolLanguage || 'auto',
@@ -58,15 +66,52 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
    * @param {React.ChangeEvent<HTMLInputElement>} e - The change event.
    */
   const handleThemeChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setCurrentSettings(prev => ({
         ...prev,
         theme: {
             ...prev.theme,
-            [name]: value,
+            [name]: type === 'checkbox' ? checked : value,
         }
     }));
   }
+
+  const handleAnimationSpeedChange = (value) => {
+    setCurrentSettings(prev => ({
+      ...prev,
+      theme: {
+        ...prev.theme,
+        animationSpeed: value,
+      }
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCurrentSettings(prev => ({
+          ...prev,
+          theme: {
+            ...prev.theme,
+            customBackground: reader.result,
+          }
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeCustomBackground = () => {
+    setCurrentSettings(prev => ({
+      ...prev,
+      theme: {
+        ...prev.theme,
+        customBackground: '',
+      }
+    }));
+  };
 
   /**
    * Handles the click on the "Save" button.
@@ -202,7 +247,7 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
               />
             </FormControl>
             <Heading size="sm" mt={4} alignSelf="flex-start">Theme Colors</Heading>
-             <FormControl>
+            <FormControl>
               <FormLabel>Main Background</FormLabel>
               <Input type="color" name="backgroundColor" value={currentSettings.theme.backgroundColor} onChange={handleThemeChange} />
             </FormControl>
@@ -217,6 +262,66 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
             <FormControl>
               <FormLabel>Accent Color</FormLabel>
               <Input type="color" name="accentColor" value={currentSettings.theme.accentColor} onChange={handleThemeChange} />
+            </FormControl>
+
+            <Heading size="sm" mt={4} alignSelf="flex-start">Animated Background</Heading>
+            <FormControl>
+              <HStack>
+                <FormLabel htmlFor='animationEnabled' mb='0'>
+                  Enable Animation
+                </FormLabel>
+                <Switch
+                  id='animationEnabled'
+                  name='animationEnabled'
+                  isChecked={currentSettings.theme.animationEnabled}
+                  onChange={handleThemeChange}
+                />
+              </HStack>
+            </FormControl>
+            <FormControl>
+              <FormLabel>Gradient Color 1</FormLabel>
+              <Input type="color" name="gradientColor1" value={currentSettings.theme.gradientColor1} onChange={handleThemeChange} isDisabled={!currentSettings.theme.animationEnabled} />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Gradient Color 2</FormLabel>
+              <Input type="color" name="gradientColor2" value={currentSettings.theme.gradientColor2} onChange={handleThemeChange} isDisabled={!currentSettings.theme.animationEnabled} />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Gradient Color 3</FormLabel>
+              <Input type="color" name="gradientColor3" value={currentSettings.theme.gradientColor3} onChange={handleThemeChange} isDisabled={!currentSettings.theme.animationEnabled} />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Animation Type</FormLabel>
+              <Select name="animationType" value={currentSettings.theme.animationType} onChange={handleThemeChange} isDisabled={!currentSettings.theme.animationEnabled}>
+                <option value="rotate">Rotate</option>
+                <option value="pan">Pan</option>
+              </Select>
+            </FormControl>
+            <FormControl>
+              <FormLabel>Animation Speed ({currentSettings.theme.animationSpeed}s)</FormLabel>
+              <Slider
+                aria-label="animation-speed-slider"
+                defaultValue={currentSettings.theme.animationSpeed}
+                min={5}
+                max={60}
+                onChangeEnd={handleAnimationSpeedChange}
+                isDisabled={!currentSettings.theme.animationEnabled}
+              >
+                <SliderTrack>
+                  <SliderFilledTrack />
+                </SliderTrack>
+                <SliderThumb />
+              </Slider>
+            </FormControl>
+
+            <Heading size="sm" mt={4} alignSelf="flex-start">Custom Background</Heading>
+            <FormControl>
+              <FormLabel>Upload Image</FormLabel>
+              <Input type="file" accept="image/*" onChange={handleFileChange} ref={fileInputRef} display="none" />
+              <Button onClick={() => fileInputRef.current.click()}>Choose File</Button>
+              {currentSettings.theme.customBackground && (
+                <Button ml={2} onClick={removeCustomBackground}>Remove Image</Button>
+              )}
             </FormControl>
           </VStack>
         </ModalBody>
