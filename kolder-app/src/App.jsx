@@ -23,6 +23,7 @@ const SettingsModal = lazy(() => import('./components/SettingsModal'));
 const AnalyticsPage = lazy(() => import('./components/AnalyticsPage'));
 const StartingSnippetManager = lazy(() => import('./components/StartingSnippetManager'));
 const CalendarModal = lazy(() => import('./components/CalendarModal'));
+const VantaNetBackground = lazy(() => import('./components/backgrounds/VantaNetBackground'));
 
 
 const api = axios.create({
@@ -215,7 +216,8 @@ function App() {
         animationEnabled,
         animationSpeed,
         animationType,
-        customBackground
+        customBackground,
+        backgroundType
       } = settings.theme;
 
       const root = document.documentElement;
@@ -227,16 +229,17 @@ function App() {
 
       document.body.style.backgroundColor = backgroundColor;
 
-      if (customBackground) {
+      // Reset styles before applying new ones
+      document.body.style.backgroundImage = 'none';
+      document.body.classList.remove('animation-enabled');
+
+      if (backgroundType === 'custom' && customBackground) {
         document.body.style.backgroundImage = `url(${customBackground})`;
-        document.body.classList.remove('animation-enabled');
-      } else {
-        document.body.style.backgroundImage = 'none';
-        if (animationEnabled) {
-          document.body.classList.add('animation-enabled');
-        } else {
-          document.body.classList.remove('animation-enabled');
-        }
+      } else if (backgroundType === 'animated' && animationEnabled) {
+        document.body.classList.add('animation-enabled');
+      } else if (backgroundType === 'vanta') {
+        // Vanta background is handled by its own component, clear other styles
+        document.body.style.backgroundColor = settings.theme.vantaBackgroundColor;
       }
     }
   }, [settings]);
@@ -467,6 +470,15 @@ function App() {
 
   return (
     <DndProvider backend={HTML5Backend}>
+      {settings?.theme?.backgroundType === 'vanta' && (
+        <Suspense fallback={<></>}>
+          <VantaNetBackground
+            backgroundColor={parseInt(settings.theme.vantaBackgroundColor.replace(/^#/, ''), 16)}
+            lineColor={parseInt(settings.theme.vantaLineColor.replace(/^#/, ''), 16)}
+            isPaused={!settings.theme.vantaAnimationEnabled}
+          />
+        </Suspense>
+      )}
       <Flex direction="column" minH="100vh" w="100%">
         <Flex
           as="header"
