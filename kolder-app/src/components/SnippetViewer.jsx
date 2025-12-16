@@ -17,7 +17,7 @@ import {
   HStack,
   SimpleGrid,
 } from '@chakra-ui/react';
-import { ArrowBackIcon } from '@chakra-ui/icons';
+import { ArrowUturnLeftIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -243,7 +243,7 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
   return (
     <Box>
       <Flex align="center" mb="4">
-        <Button onClick={onBack} leftIcon={<ArrowBackIcon />} mr="4">
+        <Button onClick={onBack} leftIcon={<ArrowUturnLeftIcon width={20} height={20} />} mr="4">
           Back
         </Button>
         <Heading size="md">{snippet.name}</Heading>

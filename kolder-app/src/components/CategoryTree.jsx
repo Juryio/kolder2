@@ -9,7 +9,7 @@ import {
   Input,
   Collapse,
 } from '@chakra-ui/react';
-import { PlusIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { ItemTypes } from '../utils/dnd-types';
 
 /**
@@ -101,6 +101,13 @@ const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory
             {category.name}
           </Heading>
         )}
+        <IconButton
+          size="xs"
+          ml="2"
+          icon={<PencilSquareIcon width={16} height={16} />}
+          onClick={() => setIsEditing(true)}
+          onMouseDown={(e) => e.stopPropagation()}
+        />
         <IconButton
           size="xs"
           ml="2"

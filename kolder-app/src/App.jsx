@@ -472,6 +472,7 @@ function App() {
 
   return (
     <DndProvider backend={HTML5Backend}>
+      {settings?.theme.backgroundType === 'darkVeil' && <DarkVeil />}
       <Flex direction="column" minH="100vh" w="100%">
         <Flex
           as="header"
