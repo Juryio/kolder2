@@ -143,5 +143,5 @@ export default function DarkVeil({
       window.removeEventListener('resize', resize);
     };
   }, [hueShift, noiseIntensity, scanlineIntensity, speed, scanlineFrequency, warpAmount, resolutionScale]);
-  return <canvas ref={ref} className="darkveil-canvas" />;
+  return <canvas ref={ref} className="darkveil-canvas" style={{ position: 'fixed', left: 0, top: 0, zIndex: -1 }} />;
 }
