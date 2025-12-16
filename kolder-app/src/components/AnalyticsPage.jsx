@@ -12,7 +12,7 @@ import {
   SimpleGrid,
   useToast,
 } from '@chakra-ui/react';
-import { ArrowBackIcon } from '@chakra-ui/icons';
+import { ArrowUturnLeftIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 
 const api = axios.create({
@@ -65,7 +65,7 @@ const AnalyticsPage = ({ onBack, snippets, setSnippets, settings }) => {
     <Box p={8}>
       <Flex align="center" mb="8" justify="space-between">
         <Flex align="center">
-            <Button onClick={onBack} leftIcon={<ArrowBackIcon />} mr="4">
+            <Button onClick={onBack} leftIcon={<ArrowUturnLeftIcon width={20} height={20} />} mr="4">
                 Back to Main
             </Button>
             <Heading size="lg">Snippet Analytics</Heading>
