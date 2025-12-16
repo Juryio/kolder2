@@ -118,14 +118,25 @@ app.put('/api/categories/:id', async (req, res) => {
         if (name) update.name = name;
         // The parentId can be null (for root categories)
         if (parentId !== undefined) {
-             // Circular dependency check
-            let currentParentId = parentId;
-            while(currentParentId) {
-                if (currentParentId.toString() === categoryToUpdate._id.toString()) {
-                    return res.status(400).json({ error: 'Cannot move a category into its own descendant.' });
+            // Performance Optimization: Circular dependency check
+            // The original implementation used a while loop with an async `findById` call,
+            // leading to an N+1 query problem. For a category tree of depth N, it made N database calls.
+            // This new implementation fetches all categories into a map once (O(1) query) and
+            // traverses the parent chain in memory, which is significantly faster.
+            // This reduces the database load and improves the API response time,
+            // especially for deeply nested categories.
+            if (parentId) {
+                const allCategories = await Category.find().lean();
+                const categoryMap = new Map(allCategories.map(c => [c._id.toString(), c]));
+
+                let currentParentId = parentId.toString();
+                while (currentParentId) {
+                    if (currentParentId === categoryToUpdate._id.toString()) {
+                        return res.status(400).json({ error: 'Cannot move a category into its own descendant.' });
+                    }
+                    const parent = categoryMap.get(currentParentId);
+                    currentParentId = parent ? (parent.parentId ? parent.parentId.toString() : null) : null;
                 }
-                const parent = await Category.findById(currentParentId);
-                currentParentId = parent ? parent.parentId : null;
             }
             update.parentId = parentId;
         }
