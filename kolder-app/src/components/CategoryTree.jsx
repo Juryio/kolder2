@@ -9,7 +9,7 @@ import {
   Input,
   Collapse,
 } from '@chakra-ui/react';
-import { AddIcon, DeleteIcon, EditIcon, ChevronDownIcon, ChevronRightIcon } from '@chakra-ui/icons';
+import { PlusIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { ItemTypes } from '../utils/dnd-types';
 
 /**
@@ -75,7 +75,7 @@ const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory
           mr="2"
           color={settings?.theme.textColor}
           variant="ghost"
-          icon={isOpen ? <ChevronDownIcon /> : <ChevronRightIcon />}
+          icon={isOpen ? <ChevronDownIcon width={16} height={16} /> : <ChevronRightIcon width={16} height={16} />}
           onClick={() => onToggleCategory(category._id)}
           visibility={category.children.length > 0 ? 'visible' : 'hidden'}
         />
@@ -104,14 +104,14 @@ const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory
         <IconButton
           size="xs"
           ml="2"
-          icon={<AddIcon />}
+          icon={<PlusIcon width={16} height={16} />}
           onClick={() => onAdd(category._id)}
           onMouseDown={(e) => e.stopPropagation()}
         />
         <IconButton
           size="xs"
           ml="2"
-          icon={<DeleteIcon />}
+          icon={<TrashIcon width={16} height={16} />}
           onClick={() => onDelete(category._id)}
           onMouseDown={(e) => e.stopPropagation()}
         />
