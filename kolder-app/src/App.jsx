@@ -23,6 +23,7 @@ const SettingsModal = lazy(() => import('./components/SettingsModal'));
 const AnalyticsPage = lazy(() => import('./components/AnalyticsPage'));
 const StartingSnippetManager = lazy(() => import('./components/StartingSnippetManager'));
 const CalendarModal = lazy(() => import('./components/CalendarModal'));
+const DarkVeil = lazy(() => import('./components/DarkVeil'));
 
 
 const api = axios.create({
@@ -215,7 +216,8 @@ function App() {
         animationEnabled,
         animationSpeed,
         animationType,
-        customBackground
+        customBackground,
+        backgroundType
       } = settings.theme;
 
       const root = document.documentElement;
@@ -227,7 +229,10 @@ function App() {
 
       document.body.style.backgroundColor = backgroundColor;
 
-      if (customBackground) {
+      if (backgroundType === 'darkVeil') {
+        document.body.style.backgroundImage = 'none';
+        document.body.classList.remove('animation-enabled');
+      } else if (backgroundType === 'custom' && customBackground) {
         document.body.style.backgroundImage = `url(${customBackground})`;
         document.body.classList.remove('animation-enabled');
       } else {
