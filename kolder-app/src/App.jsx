@@ -64,10 +64,10 @@ const MainView = ({
               flex="3"
               mr="4"
               p="4"
-              bg="rgba(255, 255, 255, 0.08)"
+              bg="rgba(255, 255, 255, 0.1)"
               backdropFilter="blur(20px)"
               borderRadius="lg"
-              border="1px solid rgba(255, 255, 255, 0.1)"
+              border="1px solid rgba(255, 255, 255, 0.2)"
               boxShadow="0 4px 30px rgba(0, 0, 0, 0.1)"
               direction="column"
             >
@@ -232,7 +232,6 @@ function App() {
 
       if (backgroundType === 'darkVeil') {
         document.body.style.backgroundImage = 'none';
-        document.body.style.backgroundColor = 'transparent';
         document.body.classList.remove('animation-enabled');
       } else if (backgroundType === 'custom' && customBackground) {
         document.body.style.backgroundImage = `url(${customBackground})`;
