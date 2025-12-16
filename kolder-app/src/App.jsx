@@ -64,10 +64,11 @@ const MainView = ({
               flex="3"
               mr="4"
               p="4"
-              bg="rgba(255, 255, 255, 0.05)"
-              backdropFilter="blur(10px)"
+              bg="rgba(255, 255, 255, 0.1)"
+              backdropFilter="blur(20px)"
               borderRadius="lg"
-              border="1px solid rgba(255, 255, 255, 0.1)"
+              border="1px solid rgba(255, 255, 255, 0.2)"
+              boxShadow="0 4px 30px rgba(0, 0, 0, 0.1)"
               direction="column"
             >
                 <CategoryTreeWidget
