@@ -76,7 +76,8 @@ const settingsSchema = new mongoose.Schema({
         animationEnabled: { type: Boolean, default: true },
         animationSpeed: { type: Number, default: 30 },
         animationType: { type: String, default: 'rotate' },
-        customBackground: { type: String, default: '' }
+        customBackground: { type: String, default: '' },
+        backgroundType: { type: String, default: 'animated' }
     },
     languageToolEnabled: { type: Boolean, default: false },
     languageToolApiUrl: { type: String, default: 'http://localhost:8010/v2/check' },
