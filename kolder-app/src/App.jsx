@@ -11,7 +11,7 @@ import {
   IconButton,
   Image,
 } from '@chakra-ui/react';
-import { SettingsIcon, ViewIcon, AddIcon, CalendarIcon } from '@chakra-ui/icons';
+import { Cog6ToothIcon, ChartBarIcon, PlusIcon, CalendarIcon as CalendarIconOutline } from '@heroicons/react/24/outline';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import CategoryTreeWidget from './components/widgets/CategoryTreeWidget';
@@ -228,20 +228,19 @@ function App() {
       root.style.setProperty('--animation-speed', `${animationSpeed}s`);
       root.style.setProperty('--animation-name', `background-${animationType}`);
 
-      document.body.style.backgroundColor = backgroundColor;
+      document.body.classList.remove('animation-enabled');
 
       if (backgroundType === 'darkVeil') {
         document.body.style.backgroundImage = 'none';
-        document.body.classList.remove('animation-enabled');
+        document.body.style.backgroundColor = 'transparent';
       } else if (backgroundType === 'custom' && customBackground) {
         document.body.style.backgroundImage = `url(${customBackground})`;
-        document.body.classList.remove('animation-enabled');
+        document.body.style.backgroundColor = 'transparent';
       } else {
         document.body.style.backgroundImage = 'none';
+        document.body.style.backgroundColor = backgroundColor;
         if (animationEnabled) {
           document.body.classList.add('animation-enabled');
-        } else {
-          document.body.classList.remove('animation-enabled');
         }
       }
     }
@@ -490,25 +489,25 @@ function App() {
         <Spacer />
         <IconButton
             onClick={() => setCurrentView('analytics')}
-            icon={<ViewIcon />}
+            icon={<ChartBarIcon width={24} height={24} />}
             aria-label="Analytics"
             mr={2}
         />
         <IconButton
             onClick={onStartingSnippetOpen}
-            icon={<AddIcon />}
+            icon={<PlusIcon width={24} height={24} />}
             aria-label="Manage Starting Snippets"
             mr={2}
         />
         <IconButton
             onClick={onCalendarOpen}
-            icon={<CalendarIcon />}
+            icon={<CalendarIconOutline width={24} height={24} />}
             aria-label="Open Calendar"
             mr={2}
         />
         <IconButton
             onClick={onSettingsOpen}
-            icon={<SettingsIcon />}
+            icon={<Cog6ToothIcon width={24} height={24} />}
             aria-label="Settings"
             mr={2}
         />
