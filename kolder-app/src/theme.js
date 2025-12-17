@@ -1,11 +1,11 @@
 import { extendTheme } from '@chakra-ui/react';
 
 const glassLayerStyle = {
-  bg: 'rgba(255, 255, 255, 0.1)',
+  bg: 'rgba(255, 255, 255, 0.04)',
   backdropFilter: 'blur(20px)',
   borderRadius: 'lg',
-  border: '1px solid rgba(255, 255, 255, 0.2)',
-  boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  boxShadow: '0 4px 30px rgba(0, 0, 0, 0.3)',
 };
 
 const theme = extendTheme({
@@ -20,7 +20,12 @@ const theme = extendTheme({
   colors: {
     brand: {
       500: '#805AD5',
+      600: '#6B46C1', // Darker shade for hover
     },
+    purple: {
+      500: '#9C27B0',
+      600: '#8E24AA',
+    }
   },
   components: {
     Button: {
@@ -33,14 +38,14 @@ const theme = extendTheme({
           ...glassLayerStyle,
           color: 'white',
           _hover: {
-            bg: 'rgba(255, 255, 255, 0.2)',
+            bg: 'rgba(255, 255, 255, 0.1)',
           },
         },
         solid: (props) => ({
-          bgGradient: 'linear(to-r, brand.500, purple.500)',
+          bg: 'rgba(128, 90, 213, 0.8)', // brand.500 with 80% opacity
           color: 'white',
           _hover: {
-            bgGradient: 'linear(to-r, brand.600, purple.600)',
+            bg: 'rgba(107, 70, 193, 0.9)', // brand.600 with 90% opacity
           },
         }),
       },
@@ -96,6 +101,11 @@ const theme = extendTheme({
             bg: 'rgba(255, 255, 255, 0.1)',
           },
         },
+      },
+    },
+    SnippetItem: {
+      baseStyle: {
+        bg: 'rgba(255, 255, 255, 0.08)',
       },
     },
   },

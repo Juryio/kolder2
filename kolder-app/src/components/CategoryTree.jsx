@@ -94,7 +94,7 @@ const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory
             cursor="pointer"
             onDoubleClick={() => setIsEditing(true)}
             onClick={handleNameClick}
-            bg={isSelected ? settings?.theme.accentColor : 'transparent'}
+            bg={isSelected ? 'rgba(128, 90, 213, 0.8)' : 'transparent'}
             p="1"
             borderRadius="md"
           >
@@ -107,6 +107,7 @@ const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory
           icon={<PencilSquareIcon width={16} height={16} />}
           onClick={() => setIsEditing(true)}
           onMouseDown={(e) => e.stopPropagation()}
+          variant="glass"
         />
         <IconButton
           size="xs"
@@ -114,6 +115,7 @@ const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory
           icon={<PlusIcon width={16} height={16} />}
           onClick={() => onAdd(category._id)}
           onMouseDown={(e) => e.stopPropagation()}
+          variant="glass"
         />
         <IconButton
           size="xs"
@@ -121,6 +123,7 @@ const DraggableCategory = ({ category, onAdd, onEdit, onDelete, onSelectCategory
           icon={<TrashIcon width={16} height={16} />}
           onClick={() => onDelete(category._id)}
           onMouseDown={(e) => e.stopPropagation()}
+          variant="glass"
         />
       </Flex>
       <Collapse in={isOpen}>
@@ -171,7 +174,7 @@ const RootDropZone = ({ onMove }) => {
       border="2px dashed"
       borderColor={isOver ? 'green.500' : 'gray.500'}
       borderRadius="md"
-      bg={isOver ? 'green.100' : 'transparent'}
+      bg={isOver ? 'rgba(0, 255, 0, 0.1)' : 'transparent'}
     >
       Drop here to make a top-level category
     </Box>
@@ -193,10 +196,6 @@ const CategoryTree = ({ categories, onAdd, onEdit, onDelete, onSelectCategory, s
             size="sm"
             ml="auto"
             onClick={() => onAdd(null)}
-            bgGradient={`linear(to-r, ${settings?.theme.accentColor}, purple.500)`}
-            _hover={{
-                bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`
-            }}
         >
           Add Category
         </Button>
