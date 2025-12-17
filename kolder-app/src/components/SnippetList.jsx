@@ -168,7 +168,7 @@ const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, 
           New Snippet
         </Button>
       </Flex>
-
+      
       {snippets.length === 0 ? (
         <Text>
             {isSearching
