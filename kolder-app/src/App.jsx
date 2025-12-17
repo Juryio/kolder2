@@ -64,11 +64,11 @@ const MainView = ({
               flex="3"
               mr="4"
               p="4"
-              bg="rgba(255, 255, 255, 0.1)"
+              bg="rgba(255, 255, 255, 0.04)"
               backdropFilter="blur(20px)"
               borderRadius="lg"
-              border="1px solid rgba(255, 255, 255, 0.2)"
-              boxShadow="0 4px 30px rgba(0, 0, 0, 0.1)"
+              border="1px solid rgba(255, 255, 255, 0.08)"
+              boxShadow="0 4px 30px rgba(0, 0, 0, 0.3)"
               direction="column"
             >
                 <CategoryTreeWidget
@@ -88,10 +88,11 @@ const MainView = ({
             <Flex
               flex="9"
               p="4"
-              bg="rgba(255, 255, 255, 0.05)"
-              backdropFilter="blur(10px)"
+              bg="rgba(255, 255, 255, 0.04)"
+              backdropFilter="blur(20px)"
               borderRadius="lg"
-              border="1px solid rgba(255, 255, 255, 0.1)"
+              border="1px solid rgba(255, 255, 255, 0.08)"
+              boxShadow="0 4px 30px rgba(0, 0, 0, 0.3)"
               direction="column"
             >
                 {selectedSnippet ? (
@@ -478,9 +479,9 @@ function App() {
           as="header"
           p="4"
           alignItems="center"
-          bg="rgba(255, 255, 255, 0.1)"
-          backdropFilter="blur(10px)"
-          borderBottom="1px solid rgba(255, 255, 255, 0.2)"
+          bg="rgba(255, 255, 255, 0.04)"
+          backdropFilter="blur(20px)"
+          borderBottom="1px solid rgba(255, 255, 255, 0.08)"
           position="sticky"
           top="0"
           zIndex="docked"
@@ -493,24 +494,28 @@ function App() {
             icon={<ChartBarIcon width={24} height={24} />}
             aria-label="Analytics"
             mr={2}
+            variant="glass"
         />
         <IconButton
             onClick={onStartingSnippetOpen}
             icon={<PlusIcon width={24} height={24} />}
             aria-label="Manage Starting Snippets"
             mr={2}
+            variant="glass"
         />
         <IconButton
             onClick={onCalendarOpen}
             icon={<CalendarIconOutline width={24} height={24} />}
             aria-label="Open Calendar"
             mr={2}
+            variant="glass"
         />
         <IconButton
             onClick={onSettingsOpen}
             icon={<Cog6ToothIcon width={24} height={24} />}
             aria-label="Settings"
             mr={2}
+            variant="glass"
         />
       </Flex>
       <Suspense fallback={<Flex justify="center" align="center" flex="1"><Spinner size="xl" /></Flex>}>

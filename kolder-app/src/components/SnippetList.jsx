@@ -12,6 +12,7 @@ import {
   Wrap,
   WrapItem,
   Tag,
+  useStyleConfig,
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon, EditIcon } from '@chakra-ui/icons';
 import SnippetEditor from './SnippetEditor';
@@ -51,6 +52,7 @@ const DraggableSnippetItem = ({ snippet, categories, onSelectSnippet, onEdit, on
             isDragging: !!monitor.isDragging(),
         }),
     }));
+    const styles = useStyleConfig('SnippetItem');
 
     drag(ref);
 
@@ -61,12 +63,10 @@ const DraggableSnippetItem = ({ snippet, categories, onSelectSnippet, onEdit, on
             align="center"
             justify="space-between"
             p={3}
-            bg={settings?.theme.contentBackgroundColor}
-            borderWidth="1px"
-            borderColor={settings?.theme.accentColor}
             borderRadius="md"
             mt={2}
             style={{ opacity: isDragging ? 0.5 : 1, cursor: 'move' }}
+            __css={styles}
         >
             <Box flex="1" mr={2}>
                 <Text fontWeight="bold" cursor="pointer" onClick={() => onSelectSnippet(snippet)}>{snippet.name}</Text>
@@ -88,8 +88,8 @@ const DraggableSnippetItem = ({ snippet, categories, onSelectSnippet, onEdit, on
                 )}
             </Box>
             <Box>
-                <IconButton size="sm" icon={<EditIcon />} mr="2" onClick={() => onEdit(snippet)} onMouseDown={(e) => e.stopPropagation()} />
-                <IconButton size="sm" icon={<DeleteIcon />} onClick={() => onDelete(snippet._id)} onMouseDown={(e) => e.stopPropagation()} />
+                <IconButton size="sm" icon={<EditIcon />} mr="2" onClick={() => onEdit(snippet)} onMouseDown={(e) => e.stopPropagation()} variant="glass" />
+                <IconButton size="sm" icon={<DeleteIcon />} onClick={() => onDelete(snippet._id)} onMouseDown={(e) => e.stopPropagation()} variant="glass" />
             </Box>
         </Flex>
     );
@@ -164,10 +164,6 @@ const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, 
             leftIcon={<AddIcon />}
             onClick={handleNew}
             disabled={isSearching}
-            bgGradient={`linear(to-r, ${settings?.theme.accentColor}, purple.500)`}
-            _hover={{
-                bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`
-            }}
         >
           New Snippet
         </Button>
