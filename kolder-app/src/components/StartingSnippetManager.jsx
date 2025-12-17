@@ -97,7 +97,7 @@ const StartingSnippetManager = ({ isOpen, onClose, settings }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="xl" scrollBehavior="inside">
       <ModalOverlay />
-      <ModalContent bg={settings?.theme.contentBackgroundColor} color={settings?.theme.textColor}>
+      <ModalContent color={settings?.theme.textColor}>
         <ModalHeader>Manage Starting Snippets</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
@@ -116,10 +116,7 @@ const StartingSnippetManager = ({ isOpen, onClose, settings }) => {
                     <Button
                         mt={4}
                         onClick={handleAdd}
-                        bgGradient={`linear(to-r, ${settings?.theme.accentColor}, purple.500)`}
-                        _hover={{
-                            bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`
-                        }}
+                        variant="glass"
                     >
                         Add Starting Snippet
                     </Button>
@@ -134,7 +131,7 @@ const StartingSnippetManager = ({ isOpen, onClose, settings }) => {
                                     <Text fontWeight="bold">{ss.name}</Text>
                                     <Text fontSize="sm" color="gray.400" noOfLines={1}>{ss.content}</Text>
                                 </Box>
-                                <IconButton aria-label="Delete starting snippet" icon={<DeleteIcon />} size="sm" onClick={() => handleDelete(ss._id)} />
+                                <IconButton aria-label="Delete starting snippet" icon={<DeleteIcon />} size="sm" onClick={() => handleDelete(ss._id)} variant="glass" />
                             </HStack>
                         )) : <Text>No starting snippets created yet.</Text>}
                      </VStack>
@@ -142,7 +139,7 @@ const StartingSnippetManager = ({ isOpen, onClose, settings }) => {
             </VStack>
         </ModalBody>
         <ModalFooter>
-          <Button variant="ghost" onClick={onClose}>Close</Button>
+          <Button variant="glass" onClick={onClose}>Close</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

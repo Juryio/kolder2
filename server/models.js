@@ -65,6 +65,7 @@ snippetSchema.index({ name: 'text', content: 'text', tags: 'text' });
 const settingsSchema = new mongoose.Schema({
     title: { type: String, default: 'Kolder' },
     icon: { type: String, default: '' },
+    language: { type: String, default: 'en' },
     theme: {
         backgroundColor: { type: String, default: '#1A202C' },
         contentBackgroundColor: { type: String, default: '#2D3748' },
