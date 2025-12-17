@@ -39,7 +39,7 @@ const AddCategoryModal = ({ isOpen, onClose, onAdd, settings }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
-      <ModalContent bg={settings?.theme.contentBackgroundColor} color={settings?.theme.textColor}>
+      <ModalContent>
         <ModalHeader>Add New Category</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
@@ -56,16 +56,12 @@ const AddCategoryModal = ({ isOpen, onClose, onAdd, settings }) => {
         <ModalFooter>
           <Button
             id="new-category-save-button"
-            bgGradient={`linear(to-r, ${settings?.theme.accentColor}, purple.500)`}
-            _hover={{
-                bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`
-            }}
             mr={3}
             onClick={handleAdd}
           >
             Save
           </Button>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button variant="glass" onClick={onClose}>Cancel</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

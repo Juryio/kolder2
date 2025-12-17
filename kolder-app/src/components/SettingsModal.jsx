@@ -178,7 +178,7 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
-      <ModalContent bg={currentSettings.theme?.contentBackgroundColor} color={currentSettings.theme?.textColor}>
+      <ModalContent color={currentSettings.theme?.textColor}>
         <ModalHeader>Application Settings</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
@@ -201,8 +201,8 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
               />
             </FormControl>
             <Heading size="sm" mt={4} alignSelf="flex-start">Data Management</Heading>
-            <Button onClick={handleExport} data-testid="export-button">Export Data</Button>
-            <Button as="label" htmlFor="import-file">
+            <Button onClick={handleExport} data-testid="export-button" variant="glass">Export Data</Button>
+            <Button as="label" htmlFor="import-file" variant="glass">
               Import Data
               <Input
                 id="import-file"
@@ -334,9 +334,9 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
                 <FormControl>
                   <FormLabel>Upload Image</FormLabel>
                   <Input type="file" accept="image/*" onChange={handleFileChange} ref={fileInputRef} display="none" />
-                  <Button onClick={() => fileInputRef.current.click()}>Choose File</Button>
+                  <Button onClick={() => fileInputRef.current.click()} variant="glass">Choose File</Button>
                   {currentSettings.theme.customBackground && (
-                    <Button ml={2} onClick={removeCustomBackground}>Remove Image</Button>
+                    <Button ml={2} onClick={removeCustomBackground} variant="glass">Remove Image</Button>
                   )}
                 </FormControl>
               </>
@@ -344,10 +344,10 @@ const SettingsModal = ({ isOpen, onClose, onSave, settings }) => {
           </VStack>
         </ModalBody>
         <ModalFooter>
-          <Button bg={currentSettings.theme.accentColor} mr={3} onClick={handleSave}>
+          <Button mr={3} onClick={handleSave}>
             Save
           </Button>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button variant="glass" onClick={onClose}>Cancel</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
