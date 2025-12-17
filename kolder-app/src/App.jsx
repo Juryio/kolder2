@@ -10,6 +10,7 @@ import {
   Spinner,
   IconButton,
   Image,
+  Input,
 } from '@chakra-ui/react';
 import { Cog6ToothIcon, ChartBarIcon, PlusIcon, CalendarIcon as CalendarIconOutline } from '@heroicons/react/24/outline';
 import { DndProvider } from 'react-dnd';
@@ -487,7 +488,24 @@ function App() {
           zIndex="docked"
         >
           {settings?.icon && <Image src={settings.icon} alt="App Icon" boxSize="32px" mr={3} />}
-        <Heading size="md">{settings?.title || 'Kolder'}</Heading>
+        <Heading size="lg">{settings?.title || 'KOLDER' } </Heading>
+        <Spacer />
+        <Flex flex="1" justify="center">
+          <Input
+            placeholder="Suche Snippets..."
+            value={searchTerm}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            maxW="300px"
+            size="sm"
+            border="none"
+            bg="rgba(255, 255, 255, 0.02)"  
+            borderRadius="full"
+            px={4}
+            height="40px"
+            boxShadow="0 12px 24px -12px rgba(0, 0, 0, 0.7)"
+               
+          />
+        </Flex>
         <Spacer />
         <IconButton
             onClick={() => setCurrentView('analytics')}
