@@ -85,7 +85,6 @@ const theme = extendTheme({
         },
         dialog: {
           ...glassLayerStyle,
-          bg: 'rgba(45, 55, 72, 0.8)',
         },
       },
     },

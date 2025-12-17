@@ -19,6 +19,7 @@ import CategoryTreeWidget from './components/widgets/CategoryTreeWidget';
 import SnippetListWidget from './components/widgets/SnippetListWidget';
 import SnippetViewer from './components/SnippetViewer';
 import AddCategoryModal from './components/AddCategoryModal';
+import { useTranslation } from 'react-i18next';
 
 const SettingsModal = lazy(() => import('./components/SettingsModal'));
 const AnalyticsPage = lazy(() => import('./components/AnalyticsPage'));
@@ -122,6 +123,7 @@ const MainView = ({
  * @returns {JSX.Element} The rendered component.
  */
 function App() {
+  const { i18n } = useTranslation();
   const [categories, setCategories] = useState([]);
   const [snippets, setSnippets] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -206,8 +208,11 @@ function App() {
       if (favicon) {
         favicon.href = settings.icon;
       }
+      if (settings.language && i18n.language !== settings.language) {
+        i18n.changeLanguage(settings.language);
+      }
     }
-  }, [settings]);
+  }, [settings, i18n]);
 
   useEffect(() => {
     if (settings?.theme) {
