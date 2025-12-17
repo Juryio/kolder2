@@ -168,12 +168,7 @@ const SnippetList = ({ snippets, categories, searchTerm, onSearchChange, onAdd, 
           New Snippet
         </Button>
       </Flex>
-      <Input
-        placeholder="Search all snippets..."
-        value={searchTerm}
-        onChange={(e) => onSearchChange(e.target.value)}
-        mb={4}
-      />
+
       {snippets.length === 0 ? (
         <Text>
             {isSearching
