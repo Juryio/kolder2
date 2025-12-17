@@ -9,6 +9,7 @@ yarn-error.log*
 /server/server.log
 vite.log
 vite.err
+*.log
 
 # Build output
 /kolder-app/dist
