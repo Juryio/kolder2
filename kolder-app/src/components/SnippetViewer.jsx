@@ -27,16 +27,8 @@ const api = axios.create({
     baseURL: '/api',
 });
 
-/**
- * Renders the UI for date placeholders.
- * @param {object} props - The component's props.
- * @returns {Array<JSX.Element>} An array of FormControl elements.
- */
 const renderDateInputs = ({ dateVars, dateValues, onDateChange }) => {
-    if (!dateVars || dateVars.length === 0) {
-        return [];
-    }
-
+    if (!dateVars || dateVars.length === 0) return [];
     return dateVars.map(varName => (
         <FormControl key={`date-${varName}`}>
             <FormLabel>{varName}</FormLabel>
@@ -51,125 +43,103 @@ const renderDateInputs = ({ dateVars, dateValues, onDateChange }) => {
     ));
 };
 
-/**
- * Renders the UI for choice placeholders.
- * @param {object} props - The component's props.
- * @returns {Array<JSX.Element>} An array of FormControl elements.
- */
-const renderChoiceInputs = ({ choices, choiceValues, onChoiceChange }) => {
-    if (!choices || choices.length === 0) {
-        return [];
-    }
-
+const renderChoiceInputs = ({ choices, choiceValues, onChoiceChange, allValues }) => {
+    if (!choices || choices.length === 0) return [];
     return choices.map(({ name, displayType, options }) => (
         <FormControl key={`choice-${name}`}>
             <FormLabel>{name}</FormLabel>
             {displayType === 'radio' ? (
                 <RadioGroup onChange={(value) => onChoiceChange(name, value)} value={choiceValues[name]}>
                     <HStack>
-                        {options.map(opt => <Radio key={opt} value={opt}>{opt}</Radio>)}
+                        {options.map(opt => (
+                            <Radio key={opt} value={opt}>
+                                {renderPlaceholders(opt, allValues)}
+                            </Radio>
+                        ))}
                     </HStack>
                 </RadioGroup>
             ) : (
                 <Select placeholder="Select option" onChange={(e) => onChoiceChange(name, e.target.value)} value={choiceValues[name]}>
-                    {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    {options.map(opt => (
+                        <option key={opt} value={opt}>
+                            {renderPlaceholders(opt, allValues)}
+                        </option>
+                    ))}
                 </Select>
             )}
         </FormControl>
     ));
 };
 
-/**
- * A component for viewing a snippet, filling in its placeholders, and copying the result.
- * @param {object} props - The component's props.
- * @param {object} props.snippet - The snippet to view.
- * @param {function} props.onBack - Function to call to return to the list view.
- * @param {object} props.settings - The application settings, used for theming.
- * @returns {JSX.Element} The rendered component.
- */
 const SnippetViewer = ({ snippet, onBack, settings }) => {
   const [parsedPlaceholders, setParsedPlaceholders] = useState({ text: [], date: [], choice: [] });
-  const [placeholders, setPlaceholders] = useState({});
-  const [viewerDateValues, setViewerDateValues] = useState({});
+  const [textValues, setTextValues] = useState({});
+  const [dateValues, setDateValues] = useState({});
   const [choiceValues, setChoiceValues] = useState({});
   const [output, setOutput] = useState('');
   const [hasCopied, setHasCopied] = useState(false);
   const [startingSnippets, setStartingSnippets] = useState([]);
   const [prefix, setPrefix] = useState('');
 
-  // Fetch starting snippets
   useEffect(() => {
     api.get('/starting-snippets')
        .then(response => setStartingSnippets(response.data))
        .catch(error => console.error('Error fetching starting snippets', error));
   }, []);
 
-  // Parse placeholders whenever the snippet content changes
   useEffect(() => {
     if (snippet && snippet.content) {
         const parsed = parsePlaceholders(snippet.content);
         setParsedPlaceholders(parsed);
 
-        // Initialize values
-        const initialTextValues = {};
-        parsed.text.forEach(name => initialTextValues[name] = '');
-        setPlaceholders(initialTextValues);
+        const initialText = {};
+        parsed.text.forEach(name => initialText[name] = '');
+        setTextValues(initialText);
 
-        setViewerDateValues({});
-        setChoiceValues({});
+        const initialDates = {};
+        parsed.date.forEach(name => initialDates[name] = null);
+        setDateValues(initialDates);
+
+        const initialChoices = {};
+        parsed.choice.forEach(c => initialChoices[c.name] = c.options[0] || '');
+        setChoiceValues(initialChoices);
+
     } else {
-        // Clear everything if there's no snippet
         setParsedPlaceholders({ text: [], date: [], choice: [] });
-        setPlaceholders({});
-        setViewerDateValues({});
+        setTextValues({});
+        setDateValues({});
         setChoiceValues({});
     }
-    setPrefix(''); // Reset prefix when snippet changes
+    setPrefix('');
   }, [snippet]);
 
-  /**
-   * Handles changes to date placeholder values.
-   * @param {string} variableName - The name of the date variable.
-   * @param {Date | null} date - The new date value.
-   */
   const handleDateChange = (variableName, date) => {
-    setViewerDateValues(prev => ({
-      ...prev,
-      [variableName]: date ? date.toISOString() : null,
-    }));
+    setDateValues(prev => ({ ...prev, [variableName]: date ? date.toISOString() : null }));
   };
 
-  /**
-   * Handles changes to choice placeholder values.
-   * @param {string} variableName - The name of the choice variable.
-   * @param {string} value - The new selected value.
-   */
   const handleChoiceChange = (variableName, value) => {
-    setChoiceValues(prev => ({
-        ...prev,
-        [variableName]: value,
-    }));
+    setChoiceValues(prev => ({ ...prev, [variableName]: value }));
   };
 
-  // Update the final output when prefix, placeholders, or dates change
+  const handleTextChange = (key, value) => {
+    setTextValues(prev => ({ ...prev, [key]: value }));
+  };
+
+  const allValues = {
+      text: textValues,
+      date: dateValues,
+      choice: choiceValues,
+  };
+
   useEffect(() => {
     if (snippet && snippet.content) {
-        const allValues = {
-            text: placeholders,
-            date: viewerDateValues,
-            choice: choiceValues,
-        };
         const evaluatedContent = renderPlaceholders(snippet.content, allValues);
         setOutput(prefix + evaluatedContent);
     } else {
         setOutput(prefix);
     }
-  }, [prefix, placeholders, snippet, viewerDateValues, choiceValues]);
+  }, [prefix, snippet, allValues]);
 
-  /**
-   * Handles copying the rendered output to the clipboard.
-   * Also tracks the usage of the snippet.
-   */
   const handleCopy = () => {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = output;
@@ -201,19 +171,6 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
     api.post(`/snippets/${snippet._id}/track`).catch(err => console.error("Failed to track copy", err));
   }
 
-  /**
-   * Handles changes to text placeholder values.
-   * @param {string} key - The name of the text placeholder.
-   * @param {string} value - The new value.
-   */
-  const handlePlaceholderChange = (key, value) => {
-    setPlaceholders(prev => ({ ...prev, [key]: value }));
-  };
-
-  /**
-   * Handles the selection of a starting snippet.
-   * @param {React.ChangeEvent<HTMLSelectElement>} e - The change event.
-   */
   const handleStartingSnippetChange = (e) => {
     const snippetId = e.target.value;
     if (!snippetId) {
@@ -226,14 +183,14 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
     }
   };
 
-  const dateInputs = renderDateInputs({ dateVars: parsedPlaceholders.date, dateValues: viewerDateValues, onDateChange: handleDateChange });
-  const choiceInputs = renderChoiceInputs({ choices: parsedPlaceholders.choice, choiceValues: choiceValues, onChoiceChange: handleChoiceChange });
+  const dateInputs = renderDateInputs({ dateVars: parsedPlaceholders.date, dateValues, onDateChange: handleDateChange });
+  const choiceInputs = renderChoiceInputs({ choices: parsedPlaceholders.choice, choiceValues, onChoiceChange: handleChoiceChange, allValues });
   const textInputs = parsedPlaceholders.text.map(key => (
     <FormControl key={`text-${key}`}>
         <FormLabel>{key}</FormLabel>
         <Input
-        value={placeholders[key]}
-        onChange={(e) => handlePlaceholderChange(key, e.target.value)}
+        value={textValues[key]}
+        onChange={(e) => handleTextChange(key, e.target.value)}
         />
     </FormControl>
   ));
@@ -248,7 +205,6 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
         </Button>
         <Heading size="md">{snippet.name}</Heading>
       </Flex>
-
       <VStack spacing="4" align="stretch">
         <Box bg={settings?.theme.contentBackgroundColor} p={4} borderRadius="md" boxShadow="md">
           <Heading size="sm" mb="2">Compose Snippet</Heading>
@@ -260,7 +216,6 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
                 ))}
             </Select>
           </FormControl>
-
           {allInputs.length > 0 && (
             <Box mt={4}>
                 <Heading size="sm" mb="2">Fill Placeholders</Heading>
@@ -270,7 +225,6 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
             </Box>
           )}
         </Box>
-
         <Box>
           <Heading size="sm" mb="2">Preview</Heading>
           <Box
@@ -282,14 +236,11 @@ const SnippetViewer = ({ snippet, onBack, settings }) => {
             dangerouslySetInnerHTML={{ __html: output }}
           />
         </Box>
-
         <Button
             onClick={handleCopy}
             disabled={!output}
             bgGradient={`linear(to-r, ${settings?.theme.accentColor}, purple.500)`}
-            _hover={{
-                bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`
-            }}
+            _hover={{ bgGradient: `linear(to-r, ${settings?.theme.accentColor}, purple.600)`}}
         >
           {hasCopied ? 'Copied!' : 'Copy to Clipboard'}
         </Button>

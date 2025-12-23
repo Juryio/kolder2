@@ -26,51 +26,50 @@ const findMatchingBrackets = (content, start) => {
 
 /**
  * Evaluates a single placeholder expression and returns the corresponding value.
- * Handles text, date, and choice placeholders.
- * @param {string} expression - The placeholder expression (the content between `{{` and `}}`).
- * @param {object} values - The object containing the placeholder values.
- * @returns {string} The evaluated value of the placeholder.
+ * @param {string} expression - The placeholder expression.
+ * @param {object} values - The placeholder values.
+ * @returns {string} The evaluated value.
  * @private
  */
 const evaluateExpression = (expression, values) => {
     expression = expression.trim();
 
-    // --- PASS 1: Structural Placeholders ---
     if (expression.startsWith('select:')) {
         const selectExpressionRegex = /^select:(\w+):/;
         const parts = expression.match(selectExpressionRegex);
         if (!parts) return `{{${expression}}}`;
-
         const variable = parts[1];
-        // Recursively render the result of the choice
         return renderPlaceholders(values.choice?.[variable] || '', values);
     }
 
-    // --- PASS 2: Value Placeholders ---
     if (expression.startsWith('date:')) {
-        const dateExpressionRegex = /^date:(\w+)(?:\s*([+-])\s*(\d+)\s*([dwmy]))?$/;
+        const dateExpressionRegex = /^date:(\w+)((?:[+-]\d+[dwmy])+)?$/;
         const parts = expression.match(dateExpressionRegex);
         if (!parts) return `{{${expression}}}`;
 
-        const [, variable, operator, amountStr, unit] = parts;
+        const [, variable, allMods] = parts;
         const baseDateValue = values.date?.[variable];
 
         if (!baseDateValue) return `{{${variable}: Unset}}`;
 
         try {
             let baseDate = new Date(baseDateValue);
-            if (operator && amountStr && unit) {
-                const amount = parseInt(amountStr, 10);
-                const duration = {};
-                switch (unit) {
-                    case 'd': duration.days = amount; break;
-                    case 'w': duration.weeks = amount; break;
-                    case 'm': duration.months = amount; break;
-                    case 'y': duration.years = amount; break;
-                    default: return `{{${expression}}}`;
+            if (allMods) {
+                const modRegex = /([+-])(\d+)([dwmy])/g;
+                let match;
+                while ((match = modRegex.exec(allMods)) !== null) {
+                    const [, operator, amountStr, unit] = match;
+                    const amount = parseInt(amountStr, 10);
+                    const duration = {};
+                    switch (unit) {
+                        case 'd': duration.days = amount; break;
+                        case 'w': duration.weeks = amount; break;
+                        case 'm': duration.months = amount; break;
+                        case 'y': duration.years = amount; break;
+                    }
+                    if (operator === '+') baseDate = add(baseDate, duration);
+                    else if (operator === '-') baseDate = sub(baseDate, duration);
                 }
-                if (operator === '+') baseDate = add(baseDate, duration);
-                else if (operator === '-') baseDate = sub(baseDate, duration);
             }
             return format(baseDate, 'dd.MM.yyyy');
         } catch (error) {
@@ -78,19 +77,14 @@ const evaluateExpression = (expression, values) => {
         }
     }
 
-    // Simple text placeholder
     return values.text?.[expression] || '';
 };
 
 /**
  * Renders a string containing placeholders with the provided values.
- * Placeholders are defined by the syntax `{{placeholder}}`.
  * @param {string} content - The string to render.
  * @param {object} values - The object containing the placeholder values.
- * @param {object} values.text - An object mapping text placeholder names to their values.
- * @param {object} values.date - An object mapping date placeholder names to their values.
- * @param {object} values.choice - An object mapping choice placeholder names to their selected option's value.
- * @returns {string} The rendered string with placeholders replaced by their values.
+ * @returns {string} The rendered string.
  */
 export const renderPlaceholders = (content, values) => {
     if (!content) {
@@ -108,7 +102,6 @@ export const renderPlaceholders = (content, values) => {
         }
 
         result += content.substring(currentIndex, openPos);
-
         const closePos = findMatchingBrackets(content, openPos + 2);
 
         if (closePos !== -1) {
@@ -116,7 +109,6 @@ export const renderPlaceholders = (content, values) => {
             result += evaluateExpression(expression, values);
             currentIndex = closePos + 2;
         } else {
-            // Unmatched opening bracket, just append the rest of the string and stop
             result += content.substring(openPos);
             break;
         }

@@ -1,63 +1,86 @@
 import { scanForPlaceholders } from './placeholder-scanner';
 
 /**
- * Recursively parses a string to find all placeholders and adds them to the provided placeholders object.
- * This function is not exported and is only used by `parsePlaceholders`.
+ * Recursively parses a string to find all placeholders and their dependencies.
  * @param {string} content - The string to parse.
- * @param {object} placeholders - The object to store the found placeholders.
- * @param {Set<string>} placeholders.text - A set of text placeholders.
- * @param {Set<string>} placeholders.date - A set of date placeholders.
- * @param {Array<object>} placeholders.choice - An array of choice placeholders.
+ * @returns {Array<object>} An array of placeholder objects.
  * @private
  */
-const _recursiveParse = (content, placeholders) => {
+const _recursiveParse = (content) => {
     if (!content) {
-        return;
+        return [];
     }
 
     const expressions = scanForPlaceholders(content);
+    const results = [];
+
     for (const expression of expressions) {
+        let placeholder;
         if (expression.startsWith('date:')) {
-            const name = expression.substring(5).split(' ')[0];
-            if (name) placeholders.date.add(name);
+            const nameMatch = expression.substring(5).match(/^(\w+)/);
+            if (nameMatch) {
+                const name = nameMatch[1];
+                placeholder = { type: 'date', name };
+            }
         } else if (expression.startsWith('select:')) {
             const parts = expression.substring(7).split(':');
             const [name, displayType, ...options] = parts;
             if (name && displayType && options.length > 0) {
-                if (!placeholders.choice.some(c => c.name === name)) {
-                    placeholders.choice.push({ name, displayType, options });
-                    // Recursively parse the options themselves for more placeholders
-                    options.forEach(option => _recursiveParse(option, placeholders));
-                }
+                const nestedPlaceholders = options.flatMap(option => _recursiveParse(option));
+                placeholder = { type: 'choice', name, displayType, options, children: nestedPlaceholders };
             }
         } else {
-            placeholders.text.add(expression);
+            placeholder = { type: 'text', name: expression };
+        }
+
+        if (placeholder) {
+            results.push(placeholder);
         }
     }
+    return results;
 };
 
 /**
- * Parses a string to find all placeholders.
- * Placeholders are defined by the syntax `[[placeholder]]`.
- * There are three types of placeholders:
- * - Text: `[[name]]`
- * - Date: `[[date:name]]`
- * - Choice: `[[select:name:displayType:option1:option2]]`
+ * Parses a string to find all placeholders and flattens the dependency tree.
  * @param {string} content - The string to parse.
  * @returns {{text: Array<string>, date: Array<string>, choice: Array<object>}} An object containing the found placeholders.
  */
 export const parsePlaceholders = (content) => {
+    const tree = _recursiveParse(content);
+
     const placeholders = {
         text: new Set(),
         date: new Set(),
         choice: [],
     };
 
-    _recursiveParse(content, placeholders);
+    const flatten = (nodes) => {
+        for (const node of nodes) {
+            if (node.type === 'text') {
+                placeholders.text.add(node.name);
+            } else if (node.type === 'date') {
+                placeholders.date.add(node.name);
+            } else if (node.type === 'choice') {
+                // Avoid adding duplicates
+                if (!placeholders.choice.some(c => c.name === node.name)) {
+                    placeholders.choice.push({
+                        name: node.name,
+                        displayType: node.displayType,
+                        options: node.options
+                    });
+                }
+            }
+            if (node.children) {
+                flatten(node.children);
+            }
+        }
+    };
 
-    // Convert sets to arrays for easier use in components
-    placeholders.text = Array.from(placeholders.text);
-    placeholders.date = Array.from(placeholders.date);
+    flatten(tree);
 
-    return placeholders;
+    return {
+        text: Array.from(placeholders.text),
+        date: Array.from(placeholders.date),
+        choice: placeholders.choice,
+    };
 };
