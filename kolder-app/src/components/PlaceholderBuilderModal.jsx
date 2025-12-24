@@ -18,68 +18,61 @@ import {
   Radio,
   HStack,
   IconButton,
+  NumberInput,
+  NumberInputField,
+  Text,
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 
-/**
- * A modal dialog for building placeholder strings.
- * @param {object} props - The component's props.
- * @param {boolean} props.isOpen - Whether the modal is open.
- * @param {function} props.onClose - Function to call when the modal is closed.
- * @param {function} props.onInsert - Function to call when the user inserts a placeholder. It receives the placeholder string as an argument.
- * @returns {JSX.Element} The rendered component.
- */
 const PlaceholderBuilderModal = ({ isOpen, onClose, onInsert }) => {
-  const [type, setType] = useState('text'); // 'text', 'date', 'choice'
+  const [type, setType] = useState('text');
   const [name, setName] = useState('');
   const [options, setOptions] = useState(['']);
   const [displayType, setDisplayType] = useState('dropdown');
+  const [dateMods, setDateMods] = useState([]);
   const [isSaveModalOpen, setSaveModalOpen] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const [templateDescription, setTemplateDescription] = useState('');
 
-  // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
       setType('text');
       setName('');
       setOptions(['']);
       setDisplayType('dropdown');
+      setDateMods([]);
     }
   }, [isOpen]);
 
-  /**
-   * Handles the click on the "Insert" button.
-   * Builds the placeholder string and calls the onInsert prop.
-   */
   const handleInsert = () => {
     if (!name.trim()) {
-        // Basic validation
-        alert('Placeholder Name is required.');
-        return;
+      alert('Placeholder Name is required.');
+      return;
     }
 
     let placeholderString = '';
     const sanitizedName = name.trim().replace(/\s+/g, '_');
 
     switch (type) {
-        case 'text':
-            placeholderString = `{{${sanitizedName}}}`;
-            break;
-        case 'date':
-            placeholderString = `{{date:${sanitizedName}}}`;
-            break;
-        case 'choice': {
-            const validOptions = options.map(o => o.trim()).filter(o => o);
-            if (validOptions.length === 0) {
-                alert('At least one option is required for a choice placeholder.');
-                return;
-            }
-            placeholderString = `{{select:${sanitizedName}:${displayType}:${validOptions.join(':')}}}`;
-            break;
+      case 'text':
+        placeholderString = `{{${sanitizedName}}}`;
+        break;
+      case 'date': {
+        const modsString = dateMods.map(mod => `${mod.operator}${mod.amount}${mod.unit}`).join('');
+        placeholderString = `{{date:${sanitizedName}${modsString}}}`;
+        break;
+      }
+      case 'choice': {
+        const validOptions = options.map(o => o.trim()).filter(o => o);
+        if (validOptions.length === 0) {
+          alert('At least one option is required for a choice placeholder.');
+          return;
         }
-        default:
-            return; // Should not happen
+        placeholderString = `{{select:${sanitizedName}:${displayType}:${validOptions.join(':')}}}`;
+        break;
+      }
+      default:
+        return;
     }
 
     onInsert(placeholderString);
@@ -106,11 +99,15 @@ const PlaceholderBuilderModal = ({ isOpen, onClose, onInsert }) => {
       return;
     }
 
-    const config = {
+    let config = {
       name: name.trim().replace(/\s+/g, '_'),
     };
 
-    if (type === 'choice') {
+    if (type === 'date') {
+        const modsString = dateMods.map(mod => `${mod.operator}${mod.amount}${mod.unit}`).join('');
+        // We save the modified name in the config for the template
+        config.name = `${config.name}${modsString}`;
+    } else if (type === 'choice') {
       const validOptions = options.map(o => o.trim()).filter(o => o);
       if (validOptions.length === 0) {
         alert('At least one option is required for a choice placeholder.');
@@ -120,6 +117,8 @@ const PlaceholderBuilderModal = ({ isOpen, onClose, onInsert }) => {
       config.options = validOptions;
     }
 
+    // When saving a date template, the name in the DB will include modifications.
+    // e.g., 'invoice_date+29d'
     const templateData = {
       name: templateName,
       description: templateDescription,
@@ -130,7 +129,6 @@ const PlaceholderBuilderModal = ({ isOpen, onClose, onInsert }) => {
     try {
       await axios.post('/api/placeholder-templates', templateData);
       closeSaveModal();
-      // Optionally, show a success message to the user
       alert('Template saved successfully!');
     } catch (error) {
       console.error('Failed to save template:', error);
@@ -139,128 +137,162 @@ const PlaceholderBuilderModal = ({ isOpen, onClose, onInsert }) => {
   };
 
 
-  /**
-   * Renders the configuration UI for the selected placeholder type.
-   * @returns {JSX.Element | null} The UI for configuring the placeholder.
-   */
+  const addDateMod = () => {
+    setDateMods([...dateMods, { operator: '+', amount: 1, unit: 'd' }]);
+  };
+
+  const removeDateMod = (index) => {
+    setDateMods(dateMods.filter((_, i) => i !== index));
+  };
+
+  const handleDateModChange = (index, field, value) => {
+    const newMods = [...dateMods];
+    newMods[index][field] = value;
+    setDateMods(newMods);
+  };
+
   const renderConfigUI = () => {
     switch (type) {
       case 'text':
-      case 'date':
         return (
           <FormControl isRequired>
             <FormLabel>Placeholder Name</FormLabel>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={type === 'date' ? 'e.g., invoice_date' : 'e.g., customer_name'}
+              placeholder="e.g., customer_name"
             />
           </FormControl>
         );
+      case 'date':
+        return (
+          <>
+            <FormControl isRequired>
+              <FormLabel>Base Date Name</FormLabel>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g., invoice_date"
+              />
+            </FormControl>
+            <FormControl>
+                <FormLabel>Date Modifications</FormLabel>
+                <VStack align="stretch" spacing={2}>
+                    {dateMods.map((mod, index) => (
+                        <HStack key={index}>
+                            <Select value={mod.operator} onChange={(e) => handleDateModChange(index, 'operator', e.target.value)} w="80px">
+                                <option value="+">+</option>
+                                <option value="-">-</option>
+                            </Select>
+                            <NumberInput value={mod.amount} onChange={(val) => handleDateModChange(index, 'amount', parseInt(val) || 0)} min={0} w="100px">
+                                <NumberInputField />
+                            </NumberInput>
+                            <Select value={mod.unit} onChange={(e) => handleDateModChange(index, 'unit', e.target.value)} w="120px">
+                                <option value="d">Days</option>
+                                <option value="w">Weeks</option>
+                                <option value="m">Months</option>
+                                <option value="y">Years</option>
+                            </Select>
+                            <IconButton icon={<DeleteIcon />} onClick={() => removeDateMod(index)} aria-label="Remove modification" />
+                        </HStack>
+                    ))}
+                </VStack>
+                <Button size="sm" mt={2} leftIcon={<AddIcon />} onClick={addDateMod}>Add Modification</Button>
+            </FormControl>
+          </>
+        );
       case 'choice':
         return (
-            <>
-                <FormControl isRequired>
-                    <FormLabel>Placeholder Name</FormLabel>
-                    <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., salutation" />
-                </FormControl>
-                <FormControl>
-                    <FormLabel>Display Style</FormLabel>
-                    <RadioGroup onChange={setDisplayType} value={displayType}>
-                        <HStack>
-                            <Radio value="dropdown">Dropdown</Radio>
-                            <Radio value="radio">Radio Buttons</Radio>
-                        </HStack>
-                    </RadioGroup>
-                </FormControl>
-                <FormControl>
-                    <FormLabel>Options</FormLabel>
-                    <VStack align="stretch">
-                        {options.map((option, index) => (
-                            <HStack key={index}>
-                                <Input
-                                    value={option}
-                                    onChange={(e) => handleOptionChange(index, e.target.value)}
-                                    placeholder={`Option ${index + 1}`}
-                                />
-                                <IconButton
-                                    icon={<DeleteIcon />}
-                                    onClick={() => removeOption(index)}
-                                    aria-label="Remove option"
-                                    isDisabled={options.length <= 1}
-                                />
-                            </HStack>
-                        ))}
-                    </VStack>
-                    <Button size="sm" mt={2} leftIcon={<AddIcon />} onClick={addOption}>Add Option</Button>
-                </FormControl>
-            </>
-        )
+          <>
+            <FormControl isRequired>
+              <FormLabel>Placeholder Name</FormLabel>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., salutation" />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Display Style</FormLabel>
+              <RadioGroup onChange={setDisplayType} value={displayType}>
+                <HStack>
+                  <Radio value="dropdown">Dropdown</Radio>
+                  <Radio value="radio">Radio Buttons</Radio>
+                </HStack>
+              </RadioGroup>
+            </FormControl>
+            <FormControl>
+              <FormLabel>Options</FormLabel>
+              <VStack align="stretch">
+                {options.map((option, index) => (
+                  <HStack key={index}>
+                    <Input
+                      value={option}
+                      onChange={(e) => handleOptionChange(index, e.target.value)}
+                      placeholder={`Option ${index + 1}`}
+                    />
+                    <IconButton
+                      icon={<DeleteIcon />}
+                      onClick={() => removeOption(index)}
+                      aria-label="Remove option"
+                      isDisabled={options.length <= 1}
+                    />
+                  </HStack>
+                ))}
+              </VStack>
+              <Button size="sm" mt={2} leftIcon={<AddIcon />} onClick={addOption}>Add Option</Button>
+            </FormControl>
+          </>
+        );
       default:
         return null;
     }
   };
 
-  /**
-   * Handles changes to the choice options.
-   * @param {number} index - The index of the option to change.
-   * @param {string} value - The new value of the option.
-   */
   const handleOptionChange = (index, value) => {
     const newOptions = [...options];
     newOptions[index] = value;
     setOptions(newOptions);
   };
 
-  /**
-   * Adds a new empty option for a choice placeholder.
-   */
   const addOption = () => {
     setOptions([...options, '']);
   };
 
-  /**
-   * Removes an option for a choice placeholder.
-   * @param {number} index - The index of the option to remove.
-   */
   const removeOption = (index) => {
     if (options.length > 1) {
-      const newOptions = options.filter((_, i) => i !== index);
-      setOptions(newOptions);
+      setOptions(options.filter((_, i) => i !== index));
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="xl">
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Placeholder Builder</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <VStack spacing={4} align="stretch">
-            <FormControl>
-              <FormLabel>Placeholder Type</FormLabel>
-              <Select value={type} onChange={(e) => setType(e.target.value)}>
-                <option value="text">Text Input</option>
-                <option value="date">Date</option>
-                <option value="choice">Choice (Dropdown/Radio)</option>
-              </Select>
-            </FormControl>
-            {renderConfigUI()}
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <Button colorScheme="green" mr={3} onClick={openSaveModal}>
-            Save as Template
-          </Button>
-          <Button colorScheme="blue" mr={3} onClick={handleInsert}>
-            Insert
-          </Button>
-          <Button onClick={onClose}>Cancel</Button>
-        </ModalFooter>
-      </ModalContent>
+    <>
+      <Modal isOpen={isOpen} onClose={onClose} size="xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Placeholder Builder</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4} align="stretch">
+              <FormControl>
+                <FormLabel>Placeholder Type</FormLabel>
+                <Select value={type} onChange={(e) => { setType(e.target.value); setDateMods([]); }}>
+                  <option value="text">Text Input</option>
+                  <option value="date">Date</option>
+                  <option value="choice">Choice (Dropdown/Radio)</option>
+                </Select>
+              </FormControl>
+              {renderConfigUI()}
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="green" mr={3} onClick={openSaveModal}>
+              Save as Template
+            </Button>
+            <Button colorScheme="blue" mr={3} onClick={handleInsert}>
+              Insert
+            </Button>
+            <Button onClick={onClose}>Cancel</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
-      {/* Save Template Modal */}
       <Modal isOpen={isSaveModalOpen} onClose={closeSaveModal}>
         <ModalOverlay />
         <ModalContent>
@@ -286,7 +318,7 @@ const PlaceholderBuilderModal = ({ isOpen, onClose, onInsert }) => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </Modal>
+    </>
   );
 };
 
