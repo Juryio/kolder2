@@ -35,7 +35,8 @@ const evaluateExpression = (expression, values) => {
     expression = expression.trim();
 
     if (expression.startsWith('select:')) {
-        const selectExpressionRegex = /^select:(\w+):/;
+        // Use a regex that supports Unicode characters for the placeholder name.
+        const selectExpressionRegex = /^select:([\p{L}\p{N}_]+):/u;
         const parts = expression.match(selectExpressionRegex);
         if (!parts) return `{{${expression}}}`;
         const variable = parts[1];
@@ -43,7 +44,8 @@ const evaluateExpression = (expression, values) => {
     }
 
     if (expression.startsWith('date:')) {
-        const dateExpressionRegex = /^date:(\w+)((?:[+-]\d+[dwmy])+)?$/;
+        // Use a regex that supports Unicode characters for the placeholder name.
+        const dateExpressionRegex = /^date:([\p{L}\p{N}_]+)((?:[+-]\d+[dwmy])+)?$/u;
         const parts = expression.match(dateExpressionRegex);
         if (!parts) return `{{${expression}}}`;
 
@@ -77,6 +79,8 @@ const evaluateExpression = (expression, values) => {
         }
     }
 
+    // For text placeholders, the name is the entire expression.
+    // It should also correctly handle Unicode characters.
     return values.text?.[expression] || '';
 };
 
